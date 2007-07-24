@@ -13,3 +13,4 @@ RewriteBase /netskel/
 
 RewriteRule ^([^/]+)/(.*)$                sendfile.php?user=$1&file=$2   [QSA]
 RewriteRule ^([^/]+)/.netskeldb$          netskeldb.php?user=$1          [QSA]
+RewriteRule ^([^/]+)/netskel$              getclient.php?user=$1          [QSA]

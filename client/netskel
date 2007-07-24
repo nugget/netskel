@@ -4,7 +4,6 @@
 #
 
 # Default netskel settings (override in ~/.netskelrc)
-
 NETSKEL_USE_HTTPS=1
 NETSKEL_USE_HTTP=0
 NETSKEL_LOGFILE=$HOME/.netskel_log
@@ -12,15 +11,16 @@ NETSKEL_LOGFILE_LIMIT=512
 NETSKEL_DBFILE=$HOME/.netskeldb
 NETSKEL_TMP=$TMP/netskel
 NETSKEL_ROOT=$HOME
-NETSKEL_USER=$USER
+
+# Default settings from netskel repisitory
+NETSKEL_USER=%USER%
+NETSKEL_HOST=%HOST%
+NETSKEL_BASE=%BASE%
 
 # Load in our local config variables
-
-if [ ! -r $HOME/.netskelrc ] ; then
-  echo ".netskelrc file not found, try 'netskel init'"
-  exit;
+if [ -r $HOME/.netskelrc ] ; then
+  source $HOME/.netskelrc
 fi
-source $HOME/.netskelrc
 
 # Ensure that DEBUG is set
 

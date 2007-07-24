@@ -8,7 +8,6 @@
   header('Content-Type: text/plain');
 
   $user = sanitize_word($rvar_user);
-  $root_dir = "./db/";
 
   if(!is_dir("$root_dir$user")) {
     header('HTTP/1.0 404 Not Found');

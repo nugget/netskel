@@ -9,7 +9,6 @@
 
   $user = sanitize_word($rvar_user);
   $file = sanitize_path($rvar_file);
-  $root_dir = "./db/";
 
   if(!is_dir("$root_dir$user")) {
     header('HTTP/1.0 404 Not Found');

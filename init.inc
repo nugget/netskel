@@ -1,5 +1,7 @@
 <?php
 
+$root_dir = "./db/";
+
 function sanitize_word($buf) {
 
   if( preg_match('/([A-Za-z0-9\.\-]+)/', $buf, $matches)) {
