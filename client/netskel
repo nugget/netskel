@@ -111,23 +111,23 @@ netskel_cleanup() {
 }
 
 netskel_fetch_with_fetch() {
-    if [ ! -x $NETSKEL_PATH_fetch ] ; then
-      return -1
-    fi
-    netskel_trace "fetching $1 to $2 using fetch"
-    $NETSKEL_PATH_fetch -q -o $2 $1 >/dev/null 2>/dev/null
-    RETVAL=$?
-    return $RETVAL
+  if [ ! -x $NETSKEL_PATH_fetch ] ; then
+    return -1
+  fi
+  netskel_trace "fetching $1 to $2 using fetch"
+  $NETSKEL_PATH_fetch -q -o $2 $1 >/dev/null 2>/dev/null
+  RETVAL=$?
+  return $RETVAL
 }
 
 netskel_fetch_with_wget() {
-    if [ ! -x $NETSKEL_PATH_wget ] ; then
-      return -1
-    fi
-    netskel_trace "fetching $1 to $2 using wget"
-    $NETSKEL_PATH_wget -q --cache=off --no-check-certificate -O $2 $1 >/dev/null 2>/dev/null
-    RETVAL=$?
-    return $RETVAL
+  if [ ! -x $NETSKEL_PATH_wget ] ; then
+    return -1
+  fi
+  netskel_trace "fetching $1 to $2 using wget"
+  $NETSKEL_PATH_wget -q --cache=off --no-check-certificate -O $2 $1 >/dev/null 2>/dev/null
+  RETVAL=$?
+  return $RETVAL
 }
 
 netskel_fetch_file() {
@@ -144,15 +144,50 @@ netskel_fetch_file() {
   return $RETVAL
 }
 
+netskel_stat_md5() {
+  return $md5_value
+}
+
 netskel_sync_file() {
-  netskel_trace "Trying to sync file $1"
+  fullpath=$NETSKEL_ROOT/$1
+  NETSKEL_NEED_SYNC=0
+  netskel_trace "Trying to sync file $fullpath"
+
+  if [ -f $fullpath ] ; then
+    NETSKEL_TARGET_SIZE=`grep $1 $NETSKEL_DBFILE | cut -f 4`
+    NETSKEL_TARGET_MD5=`grep $1 $NETSKEL_DBFILE | cut -f 5`
+
+    eval `stat -s $fullpath` || st_size=`stat --format '%s' $fullpath`
+    NETSKEL_FILE_SIZE=$st_size
+
+    if [ -x $NETSKEL_PATH_md5 ] ; then
+      md5_value=`$NETSKEL_PATH_md5 -q $fullpath`
+      echo "p1 is $md5_value"
+    fi
+    if [ -x $NETSKEL_PATH_md5sum ] ; then
+      md5_value=`$NETSKEL_PATH_md5sum $fullpath | cut -d ' ' -f 1`
+    fi
+    NETSKEL_FILE_MD5=$md5_value
+    echo "moo cow md5 is $NETSKEL_FILE_MD5 from $md5_value"
+
+    netskel_trace "File compare for $1: ($NETSKEL_FILE_SIZE:$NETSKEL_TARGET_SIZE) ($NETSKEL_FILE_MD5:$NETSKEL_TARGET_MD5)"
+  else
+    NETSKEL_NEED_SYNC=1
+  fi
+
+  if [ $NETSKEL_NEED_SYNC = 1 ] ; then
+    netskel_fetch_file $1 && mv $NETSKEL_TMP/$1 $fullpath && netskel_log "Updated file $1"
+  fi
 }
 
 # Main Program
 
 netskel_preflight
 
-netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_ROOT/.netskeldb || netskel_die "Unable to fetch dbfile"
+netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
+for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do
+  netskel_sync_file $file
+done
 
 netskel_cleanup
 
