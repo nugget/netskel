@@ -1,8 +1,20 @@
 <?php
 
-function sanitize($buf) {
+function sanitize_word($buf) {
 
   if( preg_match('/([A-Za-z0-9\.\-]+)/', $buf, $matches)) {
+    return $matches[1];
+  } else {
+    return;
+  }
+
+}
+
+function sanitize_path($buf) {
+
+  $buf = preg_replace('/\.\./','',$buf);
+
+  if( preg_match('/([A-Za-z0-9\.\-\/\_]+)/', $buf, $matches)) {
     return $matches[1];
   } else {
     return;
@@ -21,7 +33,7 @@ function file_details($path,$file,$base = '') {
   print $base;
 
   if(is_dir($path . $file)) {
-
+    
     if(!isset($perms)) { $perms = 700; }
 
     print $display . "/\t";

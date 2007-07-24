@@ -7,7 +7,7 @@
   header('Cache-Control: max-age=0, must-revalidate, no-cache, no-store');
   header('Content-Type: text/plain');
 
-  $user = sanitize($rvar_user);
+  $user = sanitize_word($rvar_user);
   $root_dir = "./db/";
 
   if(!is_dir("$root_dir$user")) {
