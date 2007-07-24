@@ -8,9 +8,10 @@
 NETSKEL_USE_HTTPS=1
 NETSKEL_USE_HTTP=0
 NETSKEL_LOGFILE=$HOME/.netskel_log
-NETSKEL_LOGFILE_LIMIT=1023
+NETSKEL_LOGFILE_LIMIT=512
 NETSKEL_DBFILE=$HOME/.netskeldb
 NETSKEL_TMP=$TMP/netskel
+NETSKEL_ROOT=$HOME
 
 # Load in our local config variables
 
@@ -62,10 +63,12 @@ netskel_path_push() {
 netskel_die() {
   NETSKEL_DEBUG=1
   netskel_log "$1"
+  echo "$1" > /dev/stderr
   exit
 }
   
 netskel_preflight() {
+  netskel_log "- - - `date -u '+%d-%b-%Y @ %T UTC'`"
   netskel_trace "Performing pre-flight checks"
 
   umask 077
@@ -91,6 +94,7 @@ netskel_preflight() {
   netskel_find_executable fetch
   netskel_find_executable wget
   netskel_find_executable curl
+  netskel_find_executable lynx
   netskel_find_executable dog
 
   netskel_find_executable md5
@@ -101,18 +105,54 @@ netskel_preflight() {
 
 netskel_cleanup() {
   netskel_trace "Cleaning the bugs off the wings"
+
+  tail -$NETSKEL_LOGFILE_LIMIT $NETSKEL_LOGFILE > $NETSKEL_LOGFILE.tmp
+  mv $NETSKEL_LOGFILE.tmp $NETSKEL_LOGFILE
+}
+
+netskel_fetch_with_fetch() {
+    if [ ! -x $NETSKEL_PATH_fetch ] ; then
+      return -1
+    fi
+    netskel_trace "fetching $1 to $2 using fetch"
+    $NETSKEL_PATH_fetch -q -o $2 $1 >/dev/null 2>/dev/null
+    RETVAL=$?
+    return $RETVAL
+}
+
+netskel_fetch_with_wget() {
+    if [ ! -x $NETSKEL_PATH_wget ] ; then
+      return -1
+    fi
+    netskel_trace "fetching $1 to $2 using wget"
+    $NETSKEL_PATH_wget -q --cache=off --no-check-certificate -O $2 $1 >/dev/null 2>/dev/null
+    RETVAL=$?
+    return $RETVAL
+}
+
+netskel_fetch_file() {
+  NETSKEL_TARGET=$NETSKEL_TMP/`basename $1`
+
+  NETSKEL_URL=https://$NETSKEL_HOST$NETSKEL_BASE/$NETSKEL_USER/$1
+
+  netskel_fetch_with_fetch $NETSKEL_URL $NETSKEL_TARGET || \
+  netskel_fetch_with_wget  $NETSKEL_URL $NETSKEL_TARGET
+  # netskel_fetch_with_curl  $NETSKEL_URL $NETSKEL_TARGET || \
+  # netskel_fetch_with_dog   $NETSKEL_URL $NETSKEL_TARGET
+  RETVAL=$?
+
+  return $RETVAL
 }
 
 netskel_sync_file() {
   netskel_trace "Trying to sync file $1"
-  
 }
 
 # Main Program
 
 netskel_preflight
 
-netskel_sync_file .netskeldb
+netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_ROOT/.netskeldb || netskel_die "Unable to fetch dbfile"
 
 netskel_cleanup
 
