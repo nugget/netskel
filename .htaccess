@@ -1,0 +1,14 @@
+<Files "*.inc">
+  Order Deny,Allow
+  Deny from All
+</Files>
+
+<Files "db">
+  Order Deny,Allow
+  Deny from All
+</Files>
+
+RewriteEngine On
+RewriteBase /netskel/
+
+RewriteRule ^([^/]+)/.netskeldb$          netskeldb.php?user=$1          [QSA]
