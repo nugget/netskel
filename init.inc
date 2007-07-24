@@ -43,8 +43,10 @@ function file_details($path,$file,$base = '') {
     print "*\t";
     print "\n";
   } else {
-    if(!isset($perms)) { $perms = 600; }
-    if(is_executable($path . $file)) { $perms = 700; }
+    if(!isset($perms)) {
+      $perms = 600;
+      if(is_executable($path . $file)) { $perms = 700; }
+    }
 
     print $display . "\t";
     print $perms . "\t";
