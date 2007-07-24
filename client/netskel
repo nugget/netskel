@@ -254,6 +254,16 @@ if [ "$1" = "sync" ] ; then
       netskel_sync_file $file
     fi
   done
+
+  exit 0
+fi
+
+if [ "$1" = "init" ] ; then
+  echo "Initializing netskel host:"
+
+  if [ -r $HOME/.netskelrc ] ; then
+    rm -f $HOME/.netskelrc
+  fi
 fi
 
 netskel_cleanup
