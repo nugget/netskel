@@ -17,7 +17,7 @@
   print "#\n";
   print "# .netskeldb for $user\n";
   print "#\n";
-  print "# Generated " . date("d-M-Y @ H:m T") . " by " . $_SERVER['HTTP_HOST'] . "\n";
+  print "# Generated " . date("d-M-Y @ H:i T") . " by " . $_SERVER['HTTP_HOST'] . "\n";
   print "#\n";
 
   $buf = custom_client_script($user);
