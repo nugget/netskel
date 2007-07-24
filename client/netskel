@@ -214,6 +214,7 @@ netskel_sync_file() {
     netskel_log "U $1"
 
     if [ "$1" = "bin/netskel" ] ; then
+      chmod 700 $HOME/bin/netskel
       netskel_log "Self-update detected, re-launching"
       $HOME/bin/netskel sync
       exit;
