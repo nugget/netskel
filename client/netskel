@@ -73,7 +73,7 @@ netskel_die() {
 }
   
 netskel_preflight() {
-  netskel_log "- - - `date -u '+%d-%b-%Y @ %T UTC'`"
+  netskel_trace "- - - `date -u '+%d-%b-%Y @ %T UTC'`"
   netskel_trace "Performing pre-flight checks"
 
   umask 077
