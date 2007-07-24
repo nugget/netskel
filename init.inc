@@ -46,6 +46,11 @@ function file_details($path,$file,$base = '') {
     if(!isset($perms)) {
       $perms = 600;
       if(is_executable($path . $file)) { $perms = 700; }
+      if(preg_match('/\.(sh|pl|py|cgi)$/', $file)) { $perms = 700; }
+      if(is_executable('/usr/bin/file')) {
+        $fileinfo = exec("/usr/bin/file $path$file");
+	if(preg_match('/executable/',$fileinfo)) { $perms = 700; }
+      }
     }
 
     print $display . "\t";
@@ -65,7 +70,7 @@ function walk_dir($dir, $base = '') {
 
     while($file = readdir($dh)) {
       if($file != '.' and $file != '..' and $file != 'CVS') {
-        if($base != '' and $file != 'bin/') {
+        if(($base . $file) != 'bin') {
           file_details("$dir/", $file, $base);
 	}
 	if(is_dir("$dir/$file")) {
