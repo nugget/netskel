@@ -1,0 +1,117 @@
+#!/bin/sh
+#
+# $Id$
+#
+
+# Default netskel settings (override in ~/.netskelrc)
+
+NETSKEL_USE_HTTPS=1
+NETSKEL_USE_HTTP=0
+NETSKEL_LOGFILE=$HOME/.netskel_log
+NETSKEL_LOGFILE_LIMIT=1023
+NETSKEL_DBFILE=$HOME/.netskeldb
+NETSKEL_TMP=$TMP/netskel
+
+# Load in our local config variables
+
+source $HOME/.netskelrc
+
+# Ensure that DEBUG is set
+
+if [ ${NETSKEL_DEBUG:-0} = 0 ] ; then
+    NETSKEL_DEBUG=0
+fi
+
+# Functions
+
+netskel_log() {
+  if [ $NETSKEL_DEBUG > 0 ] ; then
+    echo "$1"
+  fi
+  echo "$1" >> $NETSKEL_LOGFILE
+}
+
+netskel_trace() {
+  if [ $NETSKEL_DEBUG > 0 ] ; then
+    netskel_log "$1"
+  fi
+}
+
+netskel_find_executable() {
+  netskel_trace "Looking for $1 binary"
+  NETSKEL_BIN=`which $1 2>/dev/null`
+  if [ ! -x "$NETSKEL_BIN" ] ; then
+    unset NETSKEL_BIN
+    netskel_trace "Not found"
+    return -1
+  fi
+  netskel_trace "Found at $NETSKEL_BIN"
+  eval NETSKEL_PATH_$1=$NETSKEL_BIN
+  unset NETSKEL_BIN
+  return 0
+}
+
+netskel_path_push() {
+  if [ -d $1 ] ; then
+    PATH=$PATH:$1
+  fi
+  return 0
+}
+
+netskel_die() {
+  NETSKEL_DEBUG=1
+  netskel_log "$1"
+  exit
+}
+  
+netskel_preflight() {
+  netskel_trace "Performing pre-flight checks"
+
+  umask 077
+
+  if [ ! -d $NETSKEL_TMP ] ; then
+    netskel_log "Creating temporary directory $NETSKEL_TMP"
+    mkdir $NETSKEL_TMP || netskel_die "Unable to create temporary directory"
+  fi
+
+  PATH=/bin
+  netskel_path_push /sbin
+  netskel_path_push /usr/bin
+  netskel_path_push /usr/sbin
+  netskel_path_push /usr/local/bin
+  netskel_path_push /usr/local/sbin
+  netskel_path_push /opt/bin
+  netskel_path_push /opt/sbin
+  netskel_path_push /opt/local/bin
+  netskel_path_push /opt/local/sbin
+  netskel_path_push $HOME/bin
+  netskel_trace "Path set to $PATH"
+  
+  netskel_find_executable fetch
+  netskel_find_executable wget
+  netskel_find_executable curl
+  netskel_find_executable dog
+
+  netskel_find_executable md5
+  netskel_find_executable md5sum
+
+  set | grep NETSKEL
+}
+
+netskel_cleanup() {
+  netskel_trace "Cleaning the bugs off the wings"
+}
+
+netskel_sync_file() {
+  netskel_trace "Trying to sync file $1"
+  
+}
+
+# Main Program
+
+netskel_preflight
+
+netskel_sync_file .netskeldb
+
+netskel_cleanup
+
