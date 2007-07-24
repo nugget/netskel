@@ -59,7 +59,7 @@ function walk_dir($dir, $base = '') {
   if( $dh = opendir($dir) ) {
 
     while($file = readdir($dh)) {
-      if($file != '.' and $file != '..') {
+      if($file != '.' and $file != '..' and $file != 'CVS') {
         file_details("$dir/", $file, $base);
 	if(is_dir("$dir/$file")) {
 	  walk_dir("$dir/$file","$base$file/");
