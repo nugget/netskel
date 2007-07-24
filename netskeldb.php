@@ -20,6 +20,12 @@
   print "# Generated " . date("d-M-Y @ H:m T") . " by " . $_SERVER['HTTP_HOST'] . "\n";
   print "#\n";
 
-  walk_dir("$root_dir$user", '');
+  $buf = custom_client_script($user);
+  $scriptsize = strlen($buf);
+  $scriptmd5 = md5($buf);
 
+  print "bin/\t700\t*\n";
+  print "bin/netskel\t700\t*\t$scriptsize\t$scriptmd5\t\n";
+
+  walk_dir("$root_dir$user", '');
 ?>

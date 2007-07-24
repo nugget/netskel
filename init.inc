@@ -62,7 +62,9 @@ function walk_dir($dir, $base = '') {
 
     while($file = readdir($dh)) {
       if($file != '.' and $file != '..' and $file != 'CVS') {
-        file_details("$dir/", $file, $base);
+        if($base != '' and $file != 'bin/') {
+          file_details("$dir/", $file, $base);
+	}
 	if(is_dir("$dir/$file")) {
 	  walk_dir("$dir/$file","$base$file/");
 	}
@@ -72,6 +74,29 @@ function walk_dir($dir, $base = '') {
   }
 
   return;
+}
+
+function custom_client_script($user) {
+
+  $client_script = "./client/netskel";
+
+  $buf = file_get_contents($client_script);
+
+  $buf = preg_replace('/%HOST%/',$_SERVER["SERVER_NAME"],$buf);
+  $buf = preg_replace('/%USER%/',$user,$buf);
+
+  if(preg_match("/(.*)\/$user\/bin\/netskel/",$_SERVER["REQUEST_URI"],$matches)) {
+    $buf = preg_replace('/%BASE%/',$matches[1],$buf);
+  }
+  if(preg_match("/(.*)\/$user\/netskel/",$_SERVER["REQUEST_URI"],$matches)) {
+    $buf = preg_replace('/%BASE%/',$matches[1],$buf);
+  }
+  if(preg_match("/(.*)\/$user\/.netskeldb/",$_SERVER["REQUEST_URI"],$matches)) {
+    $buf = preg_replace('/%BASE%/',$matches[1],$buf);
+  }
+
+  return $buf;
+
 }
 
 ?>
