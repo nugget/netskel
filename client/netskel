@@ -229,17 +229,23 @@ netskel_sync_file() {
 
 netskel_preflight
 
-# Grab latest netskeldb
-netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
+if [ ! $1 ] ; then
+  echo "Usage: `basename $0` [ sync | init ]"
+  exit 2
+fi
 
-# Check all the files in db, see if they need synching
-for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do
-  if [ "`echo -n $file | tail -c 1`" = "/" ] ; then
-    netskel_sync_dir $file
-  else
-    netskel_sync_file $file
-  fi
-done
+if [ "$1" = "sync" ] ; then
+  # Grab latest netskeldb
+  netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
+
+  # Check all the files in db, see if they need synching
+  for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do
+    if [ "`echo -n $file | tail -c 1`" = "/" ] ; then
+      netskel_sync_dir $file
+    else
+      netskel_sync_file $file
+    fi
+  done
+fi
 
 netskel_cleanup
-
