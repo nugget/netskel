@@ -104,6 +104,10 @@ netskel_preflight() {
 
   netskel_find_executable md5
   netskel_find_executable md5sum
+
+  if [ -x $HOME/bin/pre-netskel ] ; then
+    $HOME/bin/pre-netskel
+  fi
 }
 
 netskel_cleanup() {
@@ -111,6 +115,10 @@ netskel_cleanup() {
 
   tail -$NETSKEL_LOGFILE_LIMIT $NETSKEL_LOGFILE > $NETSKEL_LOGFILE.tmp
   mv $NETSKEL_LOGFILE.tmp $NETSKEL_LOGFILE
+
+  if [ -x $HOME/bin/post-netskel ] ; then
+    $HOME/bin/post-netskel
+  fi
 }
 
 netskel_fetch_with_fetch() {
