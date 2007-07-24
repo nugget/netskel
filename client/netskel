@@ -28,7 +28,8 @@ netskel_log() {
   if [ $NETSKEL_DEBUG > 0 ] ; then
     echo "$1"
   fi
-  echo "$1" >> $NETSKEL_LOGFILE
+  echo -n `date -u "+%s"` >> $NETSKEL_LOGFILE
+  echo " $1" >> $NETSKEL_LOGFILE
 }
 
 netskel_trace() {
