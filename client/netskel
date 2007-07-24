@@ -31,16 +31,16 @@ fi
 # Functions
 
 netskel_log() {
-  if [ $NETSKEL_DEBUG > 0 ] ; then
-    echo "$1"
-  fi
+  echo "$1"
   echo -n `date -u "+%s"` >> $NETSKEL_LOGFILE
   echo " $1" >> $NETSKEL_LOGFILE
 }
 
 netskel_trace() {
+  echo -n `date -u "+%s"` >> $NETSKEL_LOGFILE
+  echo " $1" >> $NETSKEL_LOGFILE
   if [ $NETSKEL_DEBUG = 1 ] ; then
-    netskel_log "$1"
+    echo "$1"
   fi
 }
 
@@ -190,17 +190,17 @@ netskel_sync_file() {
     netskel_trace "File compare for $1: ($NETSKEL_FILE_SIZE:$NETSKEL_TARGET_SIZE) ($NETSKEL_FILE_MD5:$NETSKEL_TARGET_MD5)"
 
     if [ ! $NETSKEL_FILE_SIZE = $NETSKEL_TARGET_SIZE ] ; then
-      netskel_log "$1 file size doesn't match"
+      netskel_trace "$1 file size doesn't match"
       NETSKEL_NEED_SYNC=1
     else
       if [ ! $NETSKEL_FILE_MD5 = $NETSKEL_TARGET_MD5 ] ; then
-        netskel_log "$1 MD5 hash doesn't match"
+        netskel_trace "$1 MD5 hash doesn't match"
         NETSKEL_NEED_SYNC=1
       fi
     fi
 
   else
-    netskel_log "$1 not found locally"
+    netskel_trace "$1 not found locally"
     NETSKEL_NEED_SYNC=1
   fi
 
@@ -211,7 +211,13 @@ netskel_sync_file() {
 
     mv $NETSKEL_TARGET $fullpath
 
-    netskel_log "Updated file $1"
+    netskel_log "U $1"
+
+    if [ "$1" = "bin/netskel" ] ; then
+      netskel_log "Self-update detected, re-launching"
+      $HOME/bin/netskel sync
+      exit;
+    fi
   fi
   
   netskel_trace "Changing $fullpath to mode $NETSKEL_TARGET_MODE"
