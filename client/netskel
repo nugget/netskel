@@ -9,7 +9,7 @@ NETSKEL_USE_HTTP=0
 NETSKEL_LOGFILE=$HOME/.netskel_log
 NETSKEL_LOGFILE_LIMIT=512
 NETSKEL_DBFILE=$HOME/.netskeldb
-NETSKEL_TMP=$TMP/netskel
+NETSKEL_TMP=$HOME/netskel.tmp
 NETSKEL_ROOT=$HOME
 
 # Default settings from netskel repisitory
@@ -78,7 +78,7 @@ netskel_preflight() {
   umask 077
 
   if [ ! -d $NETSKEL_TMP ] ; then
-    netskel_log "Creating temporary directory $NETSKEL_TMP"
+    netskel_trace "Creating temporary directory $NETSKEL_TMP"
     mkdir $NETSKEL_TMP || netskel_die "Unable to create temporary directory"
   fi
 
@@ -110,6 +110,8 @@ netskel_preflight() {
 
 netskel_cleanup() {
   netskel_trace "Cleaning the bugs off the wings"
+
+  rm -rf $NETSKEL_TMP
 
   tail -$NETSKEL_LOGFILE_LIMIT $NETSKEL_LOGFILE > $NETSKEL_LOGFILE.tmp
   mv $NETSKEL_LOGFILE.tmp $NETSKEL_LOGFILE
@@ -287,9 +289,10 @@ if [ "$1" = "push" ] ; then
   NETSKEL_INSTALL_SCRIPT=$NETSKEL_TMP/install.sh
 
   echo 'cat > netskel.uue << EOF' > $NETSKEL_INSTALL_SCRIPT
-  uuencode -m $HOME/bin/netskel '$HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
+  uuencode -m $HOME/bin/netskel netskel >> $NETSKEL_INSTALL_SCRIPT
   echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
   echo 'uudecode netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'mv netskel $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
   echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
   echo 'rm -f netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
   echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
