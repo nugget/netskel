@@ -71,7 +71,9 @@ function walk_dir($dir, $base = '') {
     while($file = readdir($dh)) {
       if($file != '.' and $file != '..' and $file != 'CVS') {
         if(($base . $file) != 'bin') {
-          file_details("$dir/", $file, $base);
+	  if(!preg_match('/\.(swp)$/',$file)) {
+            file_details("$dir/", $file, $base);
+	  }
 	}
 	if(is_dir("$dir/$file")) {
 	  walk_dir("$dir/$file","$base$file/");
