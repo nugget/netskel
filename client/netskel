@@ -68,7 +68,6 @@ netskel_path_push() {
 netskel_die() {
   NETSKEL_DEBUG=1
   netskel_log "$1"
-  echo "$1" > /dev/stderr
   exit
 }
   
@@ -100,7 +99,6 @@ netskel_preflight() {
   netskel_find_executable wget
   netskel_find_executable curl
   netskel_find_executable lynx
-  netskel_find_executable dog
 
   netskel_find_executable md5
   netskel_find_executable md5sum
@@ -121,6 +119,18 @@ netskel_cleanup() {
   fi
 }
 
+netskel_fetch_with_curl() {
+  if [ ! -x $NETSKEL_PATH_curl ] ; then
+    return -1
+  fi
+  $NETSKEL_PATH_curl -k -s -o $2 $1 >/dev/null 2>/dev/null
+  RETVAL=$?
+  if [ $RETVAL = 0 ] ; then
+    netskel_trace "fetched $1 to $2 using curl"
+  fi
+  return $RETVAL
+}
+
 netskel_fetch_with_fetch() {
   if [ ! -x $NETSKEL_PATH_fetch ] ; then
     return -1
@@ -137,7 +147,8 @@ netskel_fetch_with_wget() {
   if [ ! -x $NETSKEL_PATH_wget ] ; then
     return -1
   fi
-  $NETSKEL_PATH_wget -q --cache=off --no-check-certificate -O $2 $1 >/dev/null 2>/dev/null
+
+  $NETSKEL_PATH_wget --no-check-certificate -q -O $2 $1 >/dev/null 2>/dev/null || $NETSKEL_PATH_wget -q -O $2 $1 >/dev/null 2>/dev/null
   RETVAL=$?
   if [ $RETVAL = 0 ] ; then
     netskel_trace "fetched $1 to $2 using wget"
@@ -150,10 +161,9 @@ netskel_fetch_file() {
 
   NETSKEL_URL=https://$NETSKEL_HOST$NETSKEL_BASE/$NETSKEL_USER/$1
 
+  netskel_fetch_with_curl  $NETSKEL_URL $NETSKEL_TARGET || \
   netskel_fetch_with_fetch $NETSKEL_URL $NETSKEL_TARGET || \
   netskel_fetch_with_wget  $NETSKEL_URL $NETSKEL_TARGET
-  # netskel_fetch_with_curl  $NETSKEL_URL $NETSKEL_TARGET || \
-  # netskel_fetch_with_dog   $NETSKEL_URL $NETSKEL_TARGET
   RETVAL=$?
 
   return $RETVAL
@@ -217,6 +227,9 @@ netskel_sync_file() {
     netskel_fetch_file $1
     NETSKEL_TARGET=$NETSKEL_TMP/`basename $1`
 
+    if [ ! -r $NETSKEL_TARGET ] ; then
+      netskel_die "File fetched but then not found"
+    fi
     mv $NETSKEL_TARGET $fullpath
 
     netskel_log "U $1"
@@ -264,6 +277,28 @@ if [ "$1" = "init" ] ; then
   if [ -r $HOME/.netskelrc ] ; then
     rm -f $HOME/.netskelrc
   fi
+
+  exit 0
+fi
+
+if [ "$1" = "push" ] ; then
+  ping -c 1 -q $2 >/dev/null 2>/dev/null || netskel_die "Host $2 unreachable"
+
+  NETSKEL_INSTALL_SCRIPT=$NETSKEL_TMP/install.sh
+
+  echo 'cat > netskel.uue << EOF' > $NETSKEL_INSTALL_SCRIPT
+  uuencode -m $HOME/bin/netskel '$HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'uudecode netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'rm -f netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
+  echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
+  echo '$HOME/bin/netskel sync' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'logout' >> $NETSKEL_INSTALL_SCRIPT
+
+  echo "Pushing netskel install to $2"
+  ssh -qtt $2 < $NETSKEL_INSTALL_SCRIPT
+
 fi
 
 netskel_cleanup
