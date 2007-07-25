@@ -147,7 +147,6 @@ netskel_fetch_with_curl() {
   if [ ! -x $NETSKEL_PATH_curl ] ; then
     return 1
   fi
-  echo 'trying curl?'
   $NETSKEL_PATH_curl -k -s -o $2 $1 >/dev/null 2>/dev/null
   RETVAL=$?
   if [ $RETVAL = 0 ] ; then
