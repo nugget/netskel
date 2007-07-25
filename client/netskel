@@ -20,7 +20,7 @@ NETSKEL_BASE=%BASE%
 
 # Load in our local config variables
 if [ -r $NETSKEL_RC ] ; then
-  source $NETSKEL_RC
+ . $NETSKEL_RC
 fi
 
 # Ensure that DEBUG is set
@@ -75,8 +75,8 @@ netskel_die() {
 netskel_add_crontab() {
   netskel_log "netskel not found in the crontab, adding it now"
 
-  crontab -l | grep -v netskel > $NETSKEL_TMP/crontab && \
-  echo "1 0 * * * $HOME/bin/netskel sync" >> $NETSKEL_TMP/crontab && \
+  crontab -l | grep -v netskel > $NETSKEL_TMP/crontab ; \
+  echo '1 0 * * * $HOME/bin/netskel sync' >> $NETSKEL_TMP/crontab && \
   crontab $NETSKEL_TMP/crontab && \
   rm $NETSKEL_TMP/crontab
 }
@@ -141,9 +141,13 @@ netskel_cleanup() {
 }
 
 netskel_fetch_with_curl() {
-  if [ ! -x $NETSKEL_PATH_curl ] ; then
-    return -1
+  if [ "$NETSKEL_PATH_curl" = "" ] ; then
+    return 1
   fi
+  if [ ! -x $NETSKEL_PATH_curl ] ; then
+    return 1
+  fi
+  echo 'trying curl?'
   $NETSKEL_PATH_curl -k -s -o $2 $1 >/dev/null 2>/dev/null
   RETVAL=$?
   if [ $RETVAL = 0 ] ; then
@@ -153,8 +157,11 @@ netskel_fetch_with_curl() {
 }
 
 netskel_fetch_with_fetch() {
+  if [ "$NETSKEL_PATH_fetch" = "" ] ; then
+    return 1
+  fi
   if [ ! -x $NETSKEL_PATH_fetch ] ; then
-    return -1
+    return 1
   fi
   $NETSKEL_PATH_fetch -q -o $2 $1 >/dev/null 2>/dev/null
   RETVAL=$?
@@ -165,8 +172,11 @@ netskel_fetch_with_fetch() {
 }
 
 netskel_fetch_with_wget() {
+  if [ "$NETSKEL_PATH_wget" = "" ] ; then
+    return 1
+  fi
   if [ ! -x $NETSKEL_PATH_wget ] ; then
-    return -1
+    return 1
   fi
 
   $NETSKEL_PATH_wget --no-check-certificate -q -O $2 $1 >/dev/null 2>/dev/null || $NETSKEL_PATH_wget -q -O $2 $1 >/dev/null 2>/dev/null
@@ -313,6 +323,7 @@ if [ "$1" = "push" ] ; then
   uuencode -m $HOME/bin/netskel netskel >> $NETSKEL_INSTALL_SCRIPT
   echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
   echo 'uudecode netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'ls bin/* >/dev/null || mkdir bin' >> $NETSKEL_INSTALL_SCRIPT
   echo 'mv netskel $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
   echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
   echo 'rm -f netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
