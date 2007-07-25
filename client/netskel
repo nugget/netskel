@@ -6,10 +6,11 @@
 # Default netskel settings (override in ~/.netskelrc)
 NETSKEL_USE_HTTPS=1
 NETSKEL_USE_HTTP=0
-NETSKEL_LOGFILE=$HOME/.netskel_log
+NETSKEL_LOGFILE=$HOME/.netskel/activity.log
 NETSKEL_LOGFILE_LIMIT=512
-NETSKEL_DBFILE=$HOME/.netskeldb
-NETSKEL_TMP=$HOME/netskel.tmp
+NETSKEL_DBFILE=$HOME/.netskel/dbfile
+NETSKEL_TMP=$HOME/.netskel/tmp
+NETSKEL_RC=$HOME/.netskel/config
 NETSKEL_ROOT=$HOME
 
 # Default settings from netskel repisitory
@@ -18,8 +19,8 @@ NETSKEL_HOST=%HOST%
 NETSKEL_BASE=%BASE%
 
 # Load in our local config variables
-if [ -r $HOME/.netskelrc ] ; then
-  source $HOME/.netskelrc
+if [ -r $NETSKEL_RC ] ; then
+  source $NETSKEL_RC
 fi
 
 # Ensure that DEBUG is set
@@ -72,13 +73,18 @@ netskel_die() {
 }
   
 netskel_preflight() {
+  umask 077
+
+  if [ ! -d $HOME/.netskel ] ; then
+    mkdir $HOME/.netskel || netskel_die "Unable to create temporary directory"
+  fi
+
   netskel_trace "- - - `date -u '+%d-%b-%Y @ %T UTC'`"
   netskel_trace "Performing pre-flight checks"
 
-  umask 077
 
   if [ ! -d $NETSKEL_TMP ] ; then
-    netskel_trace "Creating temporary directory $NETSKEL_TMP"
+    netskel_log "Creating temporary directory $NETSKEL_TMP"
     mkdir $NETSKEL_TMP || netskel_die "Unable to create temporary directory"
   fi
 
@@ -110,8 +116,6 @@ netskel_preflight() {
 
 netskel_cleanup() {
   netskel_trace "Cleaning the bugs off the wings"
-
-  rm -rf $NETSKEL_TMP
 
   tail -$NETSKEL_LOGFILE_LIMIT $NETSKEL_LOGFILE > $NETSKEL_LOGFILE.tmp
   mv $NETSKEL_LOGFILE.tmp $NETSKEL_LOGFILE
