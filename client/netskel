@@ -131,6 +131,10 @@ netskel_cleanup() {
   tail -$NETSKEL_LOGFILE_LIMIT $NETSKEL_LOGFILE > $NETSKEL_LOGFILE.tmp
   mv $NETSKEL_LOGFILE.tmp $NETSKEL_LOGFILE
 
+  if [ -r $NETSKEL_TMP/install.sh ] ; then
+    rm -f $NETSKEL_TMP/install.sh
+  fi
+
   if [ -x $HOME/bin/post-netskel ] ; then
     $HOME/bin/post-netskel
   fi
@@ -301,7 +305,7 @@ if [ "$1" = "init" ] ; then
 fi
 
 if [ "$1" = "push" ] ; then
-  ping -c 1 -q $2 >/dev/null 2>/dev/null || netskel_die "Host $2 unreachable"
+  # ping -c 1 -q $2 >/dev/null 2>/dev/null || netskel_die "Host $2 unreachable"
 
   NETSKEL_INSTALL_SCRIPT=$NETSKEL_TMP/install.sh
 
@@ -313,10 +317,10 @@ if [ "$1" = "push" ] ; then
   echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
   echo 'rm -f netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
   echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
-  echo 'clear && echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
 
   netskel_log "Pushing netskel install to $2"
-  ssh -qtt $2 < $NETSKEL_INSTALL_SCRIPT 
+  ssh -Tq $2 < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
 
   netskel_cleanup
   exit 0
