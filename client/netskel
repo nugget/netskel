@@ -293,12 +293,10 @@ if [ "$1" = "push" ] ; then
   echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
   echo 'rm -f netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
   echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
-  echo '$HOME/bin/netskel sync' >> $NETSKEL_INSTALL_SCRIPT
-  echo 'logout' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'clear && echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
 
-  echo "Pushing netskel install to $2"
-  ssh -qtt $2 < $NETSKEL_INSTALL_SCRIPT
-
+  netskel_log "Pushing netskel install to $2"
+  ssh -qtt $2 < $NETSKEL_INSTALL_SCRIPT 
 fi
 
 netskel_cleanup
