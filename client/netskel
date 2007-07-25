@@ -71,7 +71,16 @@ netskel_die() {
   netskel_log "$1"
   exit
 }
-  
+
+netskel_add_crontab() {
+  netskel_log "netskel not found in the crontab, adding it now"
+
+  crontab -l | grep -v netskel > $NETSKEL_TMP/crontab && \
+  echo "1 0 * * * $HOME/bin/netskel sync" >> $NETSKEL_TMP/crontab && \
+  crontab $NETSKEL_TMP/crontab && \
+  rm $NETSKEL_TMP/crontab
+}
+
 netskel_preflight() {
   umask 077
 
@@ -115,6 +124,8 @@ netskel_preflight() {
 }
 
 netskel_cleanup() {
+  crontab -l | grep -q "netskel sync" || netskel_add_crontab
+
   netskel_trace "Cleaning the bugs off the wings"
 
   tail -$NETSKEL_LOGFILE_LIMIT $NETSKEL_LOGFILE > $NETSKEL_LOGFILE.tmp
@@ -274,6 +285,7 @@ if [ "$1" = "sync" ] ; then
     fi
   done
 
+  netskel_cleanup
   exit 0
 fi
 
@@ -284,6 +296,7 @@ if [ "$1" = "init" ] ; then
     rm -f $HOME/.netskelrc
   fi
 
+  netskel_cleanup
   exit 0
 fi
 
@@ -304,6 +317,9 @@ if [ "$1" = "push" ] ; then
 
   netskel_log "Pushing netskel install to $2"
   ssh -qtt $2 < $NETSKEL_INSTALL_SCRIPT 
+
+  netskel_cleanup
+  exit 0
 fi
 
 netskel_cleanup
