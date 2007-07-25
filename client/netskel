@@ -115,6 +115,7 @@ netskel_preflight() {
   netskel_find_executable curl
   netskel_find_executable lynx
 
+  netskel_find_executable stat
   netskel_find_executable md5
   netskel_find_executable md5sum
 
@@ -178,12 +179,17 @@ netskel_fetch_with_wget() {
     return 1
   fi
 
-  $NETSKEL_PATH_wget --no-check-certificate -q -O $2 $1 >/dev/null 2>/dev/null || $NETSKEL_PATH_wget -q -O $2 $1 >/dev/null 2>/dev/null
-  RETVAL=$?
-  if [ $RETVAL = 0 ] ; then
-    netskel_trace "fetched $1 to $2 using wget"
+  $NETSKEL_PATH_wget --no-check-certificate -q -O $2 $1 >/dev/null 2>/dev/null
+  if [ ! -r $2 ] ; then
+    $NETSKEL_PATH_wget -q -O $2 $1 
   fi
-  return $RETVAL
+
+  if [ -r $2 ] ; then
+    netskel_trace "fetched $1 to $2 using wget"
+    return 0
+  else
+    return 1
+  fi
 }
 
 netskel_fetch_file() {
@@ -197,10 +203,6 @@ netskel_fetch_file() {
   RETVAL=$?
 
   return $RETVAL
-}
-
-netskel_stat_md5() {
-  return $md5_value
 }
 
 netskel_sync_dir() {
@@ -230,8 +232,13 @@ netskel_sync_file() {
     NETSKEL_TARGET_MD5=`grep "$1\W" $NETSKEL_DBFILE | cut -f 5`
     NETSKEL_TARGET_MODE=`grep "$1\W" $NETSKEL_DBFILE | cut -f 2`
 
-    eval `stat -s $fullpath 2>/dev/null` || st_size=`stat --format '%s' $fullpath 2>/dev/null`
-    NETSKEL_FILE_SIZE=$st_size
+    NETSKEL_FILE_SIZE=$NETSKEL_TARGET_SIZE
+    if [ "$NETSKEL_PATH_stat" = "" ] ; then
+      if [ ! -x $NETSKEL_PATH_stat ] ; then
+        eval `stat -s $fullpath >/dev/null 2>/dev/null` || st_size=`stat --format '%s' $fullpath >/dev/null 2>/dev/null`
+        NETSKEL_FILE_SIZE=$st_size
+      fi
+    fi
 
     NETSKEL_FILE_MD5=`$NETSKEL_PATH_md5 -q $fullpath 2>/dev/null || $NETSKEL_PATH_md5sum $fullpath | cut -d ' ' -f 1 2>/dev/null`
 
