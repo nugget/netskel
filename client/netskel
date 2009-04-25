@@ -288,7 +288,7 @@ netskel_sync_file() {
 netskel_preflight
 
 if [ ! $1 ] ; then
-  echo "Usage: `basename $0` [ sync | init ]"
+  echo "Usage: `basename $0` [ sync | init  | push <hostname> ]"
   exit 2
 fi
 
