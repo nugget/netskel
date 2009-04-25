@@ -42,10 +42,17 @@ clients.
 INSTALLATION
 
 1. Place these files in a web-accessible directory with a static URL.
+   Edit the .htaccess file and set the RewriteBase line to correspond to the
+   externally-visible path to your install directory.  So, if you're installing
+   the files to http://www.example.com/~user/netskel/ you'd want to set the
+   RewriteBase to /~user/netskel/
+
 2. create a "db" directory.
+
 3. create a directory named after your desired username.  It is not 
    necessary that this username match the unix account name on a client
    machine.
+
 4. Create any files you wish to sync within this ./db/username/ directory.
    For example, mine contains something like this:
 
