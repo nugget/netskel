@@ -15,7 +15,7 @@ various shell environment config files to all the machines where they have
 shell accounts.
 
 In particular it's useful for pushing out a common .cshrc, .bashrc, or ssh
-authorized_keys file to all your hosts.  Using netskel will all you to make
+authorized_keys file to all your hosts.  Using netskel will allow you to make
 centralized changes and updates to your unix enviornment without suffering
 through the tedium of applying those changes to the multitude of hosts where
 you have an account.
@@ -56,4 +56,23 @@ INSTALLATION
 5. Make sure the permissions on the db tree allow your web server to read
    them.
 
-6. 
+6. Now we have to "prime" the first netskel client host by grabbing a custom
+   copy of the netskel client shell script.  Do this by downloading the file
+   at an URL resembling this:
+
+      http://www.example.com/netskel_directory/username/bin/netskel
+
+   This will emit a configured script for your configuration.  Stick that in
+   ~/bin/ on your remote host.
+
+7. Now run a "netskel init" to set up the netskel working directory and
+   add netskel to your local crontab (to run a sync nightly at midnight).
+
+8. Lastly, do a full sync to grab all the files in your netskel repository by
+   running "netskel sync".
+
+9. Once you've got a netskel client host that's successfully synchronizing
+   with your server, it's really simple to propogate netskel out to other
+   hosts.  Just issue a "netskel push <hostname>" from a configured netskel
+   machine to replicate the sync client onto that second hostname.  This
+   is done via ssh, so it's presumed you can ssh from host a to host b.
