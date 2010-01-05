@@ -4,8 +4,6 @@
 #
 
 # Default netskel settings (override in ~/.netskelrc)
-NETSKEL_USE_HTTPS=1
-NETSKEL_USE_HTTP=0
 NETSKEL_LOGFILE=$HOME/.netskel/activity.log
 NETSKEL_LOGFILE_LIMIT=512
 NETSKEL_DBFILE=$HOME/.netskel/dbfile
@@ -17,6 +15,7 @@ NETSKEL_ROOT=$HOME
 NETSKEL_USER=%USER%
 NETSKEL_HOST=%HOST%
 NETSKEL_BASE=%BASE%
+NETSKEL_PROTO=%PROTO%
 
 # Load in our local config variables
 if [ -r $NETSKEL_RC ] ; then
@@ -195,7 +194,7 @@ netskel_fetch_with_wget() {
 netskel_fetch_file() {
   NETSKEL_TARGET=$NETSKEL_TMP/`basename $1`
 
-  NETSKEL_URL=https://$NETSKEL_HOST$NETSKEL_BASE/$NETSKEL_USER/$1
+  NETSKEL_URL=$NETSKEL_PROTO://$NETSKEL_HOST$NETSKEL_BASE/$NETSKEL_USER/$1
 
   netskel_fetch_with_curl  $NETSKEL_URL $NETSKEL_TARGET || \
   netskel_fetch_with_fetch $NETSKEL_URL $NETSKEL_TARGET || \

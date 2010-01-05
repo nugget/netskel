@@ -94,6 +94,7 @@ function custom_client_script($user) {
 
   $buf = preg_replace('/%HOST%/',$_SERVER["SERVER_NAME"],$buf);
   $buf = preg_replace('/%USER%/',$user,$buf);
+  $buf = preg_replace('/%PROTO%/','http' . ($_SERVER["HTTPS"] ? 's' : ''), $buf);
 
   if(preg_match("/(.*)\/$user\/bin\/netskel/",$_SERVER["REQUEST_URI"],$matches)) {
     $buf = preg_replace('/%BASE%/',$matches[1],$buf);
