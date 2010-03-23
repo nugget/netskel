@@ -14,6 +14,7 @@
     die;
   }
 
+  date_default_timezone_set('UTC');
   print "#\n";
   print "# .netskeldb for $user\n";
   print "#\n";
