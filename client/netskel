@@ -330,7 +330,7 @@ if [ "$1" = "push" ] ; then
   uuencode -m $HOME/bin/netskel netskel >> $NETSKEL_INSTALL_SCRIPT
   echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
   echo 'uudecode netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
-  echo 'ls bin/* >/dev/null || mkdir bin' >> $NETSKEL_INSTALL_SCRIPT
+  echo 'test -d bin || mkdir bin' >> $NETSKEL_INSTALL_SCRIPT
   echo 'mv netskel $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
   echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
   echo 'rm -f netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
