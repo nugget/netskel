@@ -282,16 +282,22 @@ netskel_sync_file() {
   chmod $NETSKEL_TARGET_MODE $fullpath
 }
 
+usage() {
+  echo "Usage: `basename $0` [ sync | init  | push <hostname> ]"
+  exit 2
+	}
+
 # Main Program
 
 netskel_preflight
 
 if [ ! $1 ] ; then
-  echo "Usage: `basename $0` [ sync | init  | push <hostname> ]"
+		usage
   exit 2
 fi
 
-if [ "$1" = "sync" ] ; then
+case $1 in
+		sync)
   # Grab latest netskeldb
   netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
 
@@ -308,9 +314,9 @@ if [ "$1" = "sync" ] ; then
 
   netskel_cleanup
   exit 0
-fi
+		;;
 
-if [ "$1" = "init" ] ; then
+		init)
   echo "Initializing netskel host:"
 
   if [ -r $HOME/.netskelrc ] ; then
@@ -319,9 +325,9 @@ if [ "$1" = "init" ] ; then
 
   netskel_cleanup
   exit 0
-fi
+		;;
 
-if [ "$1" = "push" ] ; then
+  push)
   # ping -c 1 -q $2 >/dev/null 2>/dev/null || netskel_die "Host $2 unreachable"
 
   NETSKEL_INSTALL_SCRIPT=$NETSKEL_TMP/install.sh
@@ -342,6 +348,11 @@ if [ "$1" = "push" ] ; then
 
   netskel_cleanup
   exit 0
-fi
+		;;
+
+		*)
+		usage
+esac
+
 
 netskel_cleanup
