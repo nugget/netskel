@@ -283,7 +283,7 @@ netskel_sync_file() {
 }
 
 usage() {
-  echo "Usage: `basename $0` [ sync | init  | push <hostname> ]"
+  echo "Usage: `basename $0` [ sync | init | push <hostname> ]"
   exit 2
 	}
 
@@ -292,12 +292,12 @@ usage() {
 netskel_preflight
 
 if [ ! $1 ] ; then
-		usage
+  usage
   exit 2
 fi
 
 case $1 in
-		sync)
+  sync)
   # Grab latest netskeldb
   netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
 
@@ -314,9 +314,9 @@ case $1 in
 
   netskel_cleanup
   exit 0
-		;;
+  ;;
 
-		init)
+  init)
   echo "Initializing netskel host:"
 
   if [ -r $HOME/.netskelrc ] ; then
@@ -325,7 +325,7 @@ case $1 in
 
   netskel_cleanup
   exit 0
-		;;
+  ;;
 
   push)
   # ping -c 1 -q $2 >/dev/null 2>/dev/null || netskel_die "Host $2 unreachable"
@@ -348,10 +348,12 @@ case $1 in
 
   netskel_cleanup
   exit 0
-		;;
+  ;;
 
-		*)
-		usage
+  *)
+  echo "$0: invalid argument -- $1" >&2
+  usage
+  ;;
 esac
 
 
