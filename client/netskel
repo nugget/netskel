@@ -285,7 +285,7 @@ netskel_sync_file() {
 usage() {
   echo "Usage: `basename $0` [ sync | init | push <hostname> ]"
   exit 2
-	}
+}
 
 # Main Program
 
@@ -298,62 +298,62 @@ fi
 
 case $1 in
   sync)
-  # Grab latest netskeldb
-  netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
+    # Grab latest netskeldb
+    netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
 
-  # Check all the files in db, see if they need synching
-  for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do
-    echo -n "$file" | egrep '/$' >/dev/null 2>/dev/null
-    RETVAL=$?
-    if [ $RETVAL = 0 ] ; then
-      netskel_sync_dir $file
-    else
-      netskel_sync_file $file
-    fi
-  done
+    # Check all the files in db, see if they need synching
+    for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do
+      echo -n "$file" | egrep '/$' >/dev/null 2>/dev/null
+      RETVAL=$?
+      if [ $RETVAL = 0 ] ; then
+        netskel_sync_dir $file
+      else
+        netskel_sync_file $file
+      fi
+    done
 
-  netskel_cleanup
-  exit 0
-  ;;
+    netskel_cleanup
+    exit 0
+    ;;
 
   init)
-  echo "Initializing netskel host:"
+    echo "Initializing netskel host:"
 
-  if [ -r $HOME/.netskelrc ] ; then
-    rm -f $HOME/.netskelrc
-  fi
+    if [ -r $HOME/.netskelrc ] ; then
+      rm -f $HOME/.netskelrc
+    fi
 
-  netskel_cleanup
-  exit 0
-  ;;
+    netskel_cleanup
+    exit 0
+    ;;
 
   push)
-  # ping -c 1 -q $2 >/dev/null 2>/dev/null || netskel_die "Host $2 unreachable"
+    # ping -c 1 -q $2 >/dev/null 2>/dev/null || netskel_die "Host $2 unreachable"
 
-  NETSKEL_INSTALL_SCRIPT=$NETSKEL_TMP/install.sh
+    NETSKEL_INSTALL_SCRIPT=$NETSKEL_TMP/install.sh
 
-  echo 'cat > netskel.uue << EOF' > $NETSKEL_INSTALL_SCRIPT
-  uuencode -m $HOME/bin/netskel netskel >> $NETSKEL_INSTALL_SCRIPT
-  echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
-  echo 'uudecode netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
-  echo 'test -d bin || mkdir bin' >> $NETSKEL_INSTALL_SCRIPT
-  echo 'mv netskel $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
-  echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
-  echo 'rm -f netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
-  echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
-  echo 'echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'cat > netskel.uue << EOF' > $NETSKEL_INSTALL_SCRIPT
+    uuencode -m $HOME/bin/netskel netskel >> $NETSKEL_INSTALL_SCRIPT
+    echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'uudecode netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'test -d bin || mkdir bin' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'mv netskel $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'rm -f netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
+    echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
 
-  netskel_log "Pushing netskel install to $2"
-  ssh -Tq $2 < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
+    netskel_log "Pushing netskel install to $2"
+    ssh -Tq $2 < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
 
-  netskel_cleanup
-  exit 0
-  ;;
+    netskel_cleanup
+    exit 0
+    ;;
 
   *)
-  echo "`basename $0`: invalid argument -- $1" >&2
-  usage
-  ;;
+    echo "`basename $0`: invalid argument -- $1" >&2
+    usage
+    ;;
 esac
 
 
