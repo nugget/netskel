@@ -2,7 +2,7 @@
 
   include "init.inc";
 
-  import_request_variables("cpg","rvar_");
+  extract($_REQUEST, EXTR_PREFIX_ALL|EXTR_REFS, 'rvar');
 
   header('Cache-Control: max-age=0, must-revalidate, no-cache, no-store');
   header('Content-Type: text/plain');
