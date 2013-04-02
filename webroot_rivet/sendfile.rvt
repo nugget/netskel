@@ -1,0 +1,24 @@
+<?
+	unset -nocomplain response
+	load_response
+
+	source common.tcl
+
+	headers set Cache-Control	"max-age=0, must-revalidate, no-cache, no-store"
+	headers set Pragma			"no-cache"
+	headers set Expires			[clock format [clock seconds] -format "%a, %d %b %Y %H:%M:%S %Z" -gmt 1]
+	headers set Content-Type	"text/plain"
+
+	::netskel::require_values response user file
+
+	set dbdir [::netskel::dbdir $response(user)]
+	set target [file join $dbdir $response(file)]
+
+	if {![file exists $target] || [file isdirectory $target]} {
+		::netskel::deny_access
+	}
+
+	set buf [read_file $target]
+	puts -nonewline $buf
+	abort_page
+?>

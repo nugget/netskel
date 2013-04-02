@@ -1,7 +1,4 @@
 #!/bin/sh
-#
-# $Id$
-#
 
 # Default netskel settings (override in ~/.netskelrc)
 NETSKEL_LOGFILE=$HOME/.netskel/activity.log
@@ -208,7 +205,7 @@ netskel_sync_dir() {
   fullpath="$NETSKEL_ROOT/$1"
   pathleft="$NETSKEL_ROOT"
 
-  NETSKEL_TARGET_MODE=`grep "$1\W" $NETSKEL_DBFILE | cut -f 2`
+  NETSKEL_TARGET_MODE=`grep "$1\W" $NETSKEL_DBFILE | head -1 | cut -f 2`
 
   for pathpart in `echo $1 | sed 's/\// /g'`; do
     if [ ! -d "$pathleft/$pathpart" ] ; then

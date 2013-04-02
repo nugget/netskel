@@ -1,0 +1,38 @@
+<?
+	package require md5
+
+	unset -nocomplain response
+	load_response
+
+	source common.tcl
+
+	headers set Cache-Control	"max-age=0, must-revalidate, no-cache, no-store"
+	headers set Pragma			"no-cache"
+	headers set Expires			[clock format [clock seconds] -format "%a, %d %b %Y %H:%M:%S %Z" -gmt 1]
+	headers set Content-Type	"text/plain"
+
+	::netskel::require_values response user
+
+	set dbdir [::netskel::dbdir $response(user)]
+
+	if {![file isdirectory $dbdir]} {
+		::netskel::deny_access
+	}
+
+	puts "#"
+	puts "# .netskeldb for $response(user)"
+	puts "#"
+	puts "# Generated [clock format [clock seconds] -gmt 1 -format "%d-%m-%Y @ %H:%M %Z"] by [info hostname]"
+	puts "#"
+
+	set buf [::netskel::custom_client_script $response(user)]
+
+	set scriptsize [string length $buf]
+	set scriptmd5  [string tolower [::md5::md5 -hex $buf]]
+
+	puts "bin/\t700\t*";
+	puts "bin/netskel\t700\t*\t$scriptsize\t$scriptmd5\t";
+
+	::netskel::walk_dir $dbdir
+
+?>

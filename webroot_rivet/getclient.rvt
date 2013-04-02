@@ -1,0 +1,15 @@
+<?
+	source common.tcl
+
+	unset -nocomplain response
+	load_response
+
+	headers set Cache-Control	"max-age=0, must-revalidate, no-cache, no-store"
+	headers set Pragma			"no-cache"
+	headers set Expires			[clock format [clock seconds] -format "%a, %d %b %Y %H:%M:%S %Z" -gmt 1]
+	headers set Content-Type	"text/plain"
+
+	set buf [::netskel::custom_client_script $response(user)]
+	puts -nonewline $buf
+	abort_page
+?>
