@@ -52,7 +52,7 @@ namespace eval ::netskel {
 			if {![info exists perms]} {
 				set perms 700
 			}
-			set retbuf "${base}${display}/\t$perms\t*\t"
+			set retbuf "[file join ${base} ${display}]/\t$perms\t*\t"
 		} else {
 			set perms [file attributes $file -permissions]
 			set size [file size $file]
@@ -65,7 +65,7 @@ namespace eval ::netskel {
 
 	proc walk_dir {dbdir {base ""}} {
 		cd $dbdir
-		foreach file [concat [glob ".*"] [glob "*"]] {
+		foreach file [concat [glob -nocomplain ".*"] [glob -nocomplain "*"]] {
 			cd $dbdir
 			if {$file ne "." && $file ne ".."} {
 				puts [::netskel::file_details $dbdir $file $base]
