@@ -209,7 +209,7 @@ netskel_sync_dir() {
 
   for pathpart in `echo $1 | sed 's/\// /g'`; do
     if [ ! -d "$pathleft/$pathpart" ] ; then
-      netskel_log "Creating directory $pathleft/$pathpart"
+      netskel_log "C $pathleft/$pathpart/"
       mkdir "$pathleft/$pathpart"
     fi
     pathleft="$pathleft/$pathpart"
