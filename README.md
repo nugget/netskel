@@ -1,11 +1,11 @@
-                                    _       _        _ 
+```                                    _       _        _ 
  David McNett            _ __   ___| |_ ___| | _____| |
                         | '_ \ / _ \ __/ __| |/ / _ \ |
  http://macnugget.org/  | | | |  __/ |_\__ \   <  __/ |
                         |_| |_|\___|\__|___/_|\_\___|_|
 
                         netskel environment synchronizer
-
+```
 INTRODUCTION
 
 netskel is an http(s) based file synchronization tool which can be used to 
