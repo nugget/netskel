@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -36,15 +39,73 @@ func syntaxError() {
 	os.Exit(1)
 }
 
+func dbFileLine(filename string) {
+	file, err := os.Stat(filename)
+	if err != nil {
+		Warn("Error Stat %v: %v", filename, err)
+		return
+	}
+
+	trimmed := strings.TrimPrefix(filename, "./")
+
+	hash, _ := fingerprint(filename)
+
+	fmt.Printf("%s\t%o\t*\t%d\t%x\n", trimmed, file.Mode(), file.Size(), hash)
+}
+
+func listDir(dirname string) {
+	files, err := ioutil.ReadDir(dirname)
+	if err != nil {
+		Warn("Error reading directory %v", dirname)
+		return
+	}
+
+	for _, file := range files {
+		if file.Name() == ".git" {
+			continue
+		}
+
+		fullname := dirname + "/" + file.Name()
+
+		switch mode := file.Mode(); {
+		case mode.IsDir():
+			trimmed := strings.TrimPrefix(fullname, "./")
+			fmt.Printf("%s\t%d\t*\n", trimmed, 700)
+			listDir(fullname)
+		case mode.IsRegular():
+			dbFileLine(fullname)
+		}
+	}
+}
+
 func netskelDB() {
-	fmt.Println("Moo")
+	servername, _ := os.Hostname()
+	now := time.Now().Format("Mon, 2 Jan 2006 15:04:05 UTC")
+
+	os.Chdir("db")
+
+	fmt.Printf("#\n# .netskeldb for %v\n#\n# Generated %v by %v\n#\n", CLIENT, now, servername)
+
+	listDir(".")
+
 	os.Exit(0)
 }
 
-func fingerprint(method, filename string) {
-	hash := "THISISAHASH"
+func fingerprint(filename string) ([]byte, error) {
+	var result []byte
 
-	fmt.Println(hash)
+	file, err := os.Open(filename)
+	if err != nil {
+		return result, err
+	}
+	defer file.Close()
+
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return result, err
+	}
+
+	return hash.Sum(result), nil
 }
 
 func addKey(hostname string) {
@@ -110,7 +171,8 @@ func main() {
 
 	case "sha1":
 		filename := nsCommand[1]
-		fingerprint("sha1", filename)
+		hash, _ := fingerprint(filename)
+		fmt.Println(hash)
 
 	case "addkey":
 		key := nsCommand[1]
