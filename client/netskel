@@ -344,9 +344,11 @@ case $1 in
 
 	echo 'echo "Running Netskel bundler"' > $NETSKEL_INSTALL_SCRIPT
     echo 'test -d $HOME/bin || mkdir $HOME/bin' >> $NETSKEL_INSTALL_SCRIPT
-    echo 'cat > bin/netskel << EOF' > $NETSKEL_INSTALL_SCRIPT
-    cat $HOME/bin/netskel netskel >> $NETSKEL_INSTALL_SCRIPT
+    echo 'cat > netskel.xxdp << EOF' > $NETSKEL_INSTALL_SCRIPT
+    xxd -p $HOME/bin/netskel >> $NETSKEL_INSTALL_SCRIPT
     echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
+	echo 'xxd -p -r netskel.xxdp > $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
+	echo 'rm netskel.xxdp' >> $NETSKEL_INSTALL_SCRIPT
     echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
     echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
     echo 'echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
