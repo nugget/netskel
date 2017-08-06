@@ -104,11 +104,6 @@ netskel_preflight() {
   netskel_path_push $HOME/bin
   netskel_trace "Path set to $PATH"
   
-  netskel_find_executable fetch
-  netskel_find_executable wget
-  netskel_find_executable curl
-  netskel_find_executable lynx
-
   netskel_find_executable stat
   netskel_find_executable md5
   netskel_find_executable md5sum
@@ -142,66 +137,13 @@ netskel_cleanup() {
   fi
 }
 
-netskel_fetch_with_curl() {
-  if [ "$NETSKEL_PATH_curl" = "" ] ; then
-    return 1
-  fi
-  if [ ! -x $NETSKEL_PATH_curl ] ; then
-    return 1
-  fi
-  $NETSKEL_PATH_curl -k -s -o $2 $1 >/dev/null 2>/dev/null
-  RETVAL=$?
-  if [ $RETVAL = 0 ] ; then
-    netskel_trace "fetched $1 to $2 using curl"
-  fi
-  return $RETVAL
-}
-
-netskel_fetch_with_fetch() {
-  if [ "$NETSKEL_PATH_fetch" = "" ] ; then
-    return 1
-  fi
-  if [ ! -x $NETSKEL_PATH_fetch ] ; then
-    return 1
-  fi
-  $NETSKEL_PATH_fetch -q -o $2 $1 >/dev/null 2>/dev/null
-  RETVAL=$?
-  if [ $RETVAL = 0 ] ; then
-    netskel_trace "fetched $1 to $2 using fetch"
-  fi
-  return $RETVAL
-}
-
-netskel_fetch_with_wget() {
-  if [ "$NETSKEL_PATH_wget" = "" ] ; then
-    return 1
-  fi
-  if [ ! -x $NETSKEL_PATH_wget ] ; then
-    return 1
-  fi
-
-  $NETSKEL_PATH_wget --no-check-certificate -q -O $2 $1 >/dev/null 2>/dev/null
-  if [ ! -r $2 ] ; then
-    $NETSKEL_PATH_wget -q -O $2 $1 
-  fi
-
-  if [ -r $2 ] ; then
-    netskel_trace "fetched $1 to $2 using wget"
-    return 0
-  else
-    return 1
-  fi
-}
-
 netskel_fetch_file() {
   NETSKEL_TARGET=$NETSKEL_TMP/`basename $1`
 
-  NETSKEL_URL=$NETSKEL_PROTO://$NETSKEL_HOST$NETSKEL_BASE/$NETSKEL_USER/$1
-
-  netskel_fetch_with_curl  $NETSKEL_URL $NETSKEL_TARGET || \
-  netskel_fetch_with_fetch $NETSKEL_URL $NETSKEL_TARGET || \
-  netskel_fetch_with_wget  $NETSKEL_URL $NETSKEL_TARGET
+  $SSH sendfile db/$1 > $NETSKEL_TMP/xxdfile && xxd -p -r $NETSKEL_TMP/xxdfile > $NETSKEL_TARGET
   RETVAL=$?
+
+  rm -f $NETSKEL_TMP/xxdfile
 
   return $RETVAL
 }
@@ -301,7 +243,7 @@ fi
 case $1 in
   sync)
     # Grab latest netskeldb
-    netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
+    $SSH netskeldb > $NETSKEL_TMP/.netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
 
     # Check all the files in db, see if they need synching
     for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do

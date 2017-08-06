@@ -50,7 +50,12 @@ func dbFileLine(filename string) {
 
 	hash, _ := fingerprint(filename)
 
-	fmt.Printf("%s\t%o\t*\t%d\t%x\n", trimmed, file.Mode(), file.Size(), hash)
+	mode := 0600
+	if file.Mode()&0111 != 0 {
+		mode = 0700
+	}
+
+	fmt.Printf("%s\t%o\t*\t%d\t%x\n", trimmed, mode, file.Size(), hash)
 }
 
 func listDir(dirname string) {
@@ -70,7 +75,7 @@ func listDir(dirname string) {
 		switch mode := file.Mode(); {
 		case mode.IsDir():
 			trimmed := strings.TrimPrefix(fullname, "./")
-			fmt.Printf("%s\t%d\t*\n", trimmed, 700)
+			fmt.Printf("%s/\t%d\t*\n", trimmed, 700)
 			listDir(fullname)
 		case mode.IsRegular():
 			dbFileLine(fullname)
@@ -106,6 +111,27 @@ func fingerprint(filename string) ([]byte, error) {
 	}
 
 	return hash.Sum(result), nil
+}
+
+func hexdump(filename string) {
+	linelength := 30
+	count := 0
+
+	file, err := ioutil.ReadFile(filename)
+	if err != nil {
+		Warn("Error trying to hexdump %v: %v", filename, err)
+		os.Exit(1)
+	}
+
+	for _, c := range file {
+		fmt.Printf("%02x", c)
+		count += 1
+		if count >= linelength {
+			count = 0
+			fmt.Printf("\n")
+		}
+	}
+	fmt.Printf("\n")
 }
 
 func addKey(hostname string) {
@@ -173,6 +199,10 @@ func main() {
 		filename := nsCommand[1]
 		hash, _ := fingerprint(filename)
 		fmt.Println(hash)
+
+	case "sendfile":
+		filename := nsCommand[1]
+		hexdump(filename)
 
 	case "addkey":
 		key := nsCommand[1]
