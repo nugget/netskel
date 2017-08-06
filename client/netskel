@@ -1,18 +1,16 @@
 #!/bin/sh
 
-# Default netskel settings (override in ~/.netskelrc)
+# Default netskel settings (override in ~/.netskel/config)
 NETSKEL_LOGFILE=$HOME/.netskel/activity.log
 NETSKEL_LOGFILE_LIMIT=512
 NETSKEL_DBFILE=$HOME/.netskel/dbfile
 NETSKEL_TMP=$HOME/.netskel/tmp
 NETSKEL_RC=$HOME/.netskel/config
 NETSKEL_ROOT=$HOME
+NETSKEL_IDENTITY=$HOME/.netskel/identity
 
 # Default settings from netskel repisitory
-NETSKEL_USER=%USER%
-NETSKEL_HOST=%HOST%
-NETSKEL_BASE=%BASE%
-NETSKEL_PROTO=%PROTO%
+NETSKEL_SERVER=netskel@netskel.macnugget.org
 
 # Load in our local config variables
 if [ -r $NETSKEL_RC ] ; then
@@ -114,9 +112,16 @@ netskel_preflight() {
   netskel_find_executable stat
   netskel_find_executable md5
   netskel_find_executable md5sum
+  netskel_find_executable ssh
 
   if [ -x $HOME/bin/pre-netskel ] ; then
     $HOME/bin/pre-netskel
+  fi
+
+  if [ -r $NETSKEL_IDENTITY ] ; then
+    SSH="$NETSKEL_PATH_ssh -i $NETSKEL_IDENTITY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q $NETSKEL_SERVER"
+  else
+    SSH="$NETSKEL_PATH_ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q $NETSKEL_SERVER"
   fi
 }
 
@@ -319,6 +324,16 @@ case $1 in
     if [ -r $HOME/.netskelrc ] ; then
       rm -f $HOME/.netskelrc
     fi
+
+	if [ -r $HOME/.netskel/identity ] ; then
+		echo "ERROR: ~/.netskel/identity already exists"
+		echo "       Please remove this file if you want to re-init"
+		exit 1
+	fi
+
+	$SSH addkey `hostname` > $NETSKEL_IDENTITY
+	chmod 400 $NETSKEL_IDENTITY
+	echo "Wrote secure identity to `ls -la $NETSKEL_IDENTITY`"
 
     netskel_cleanup
     exit 0
