@@ -331,6 +331,7 @@ case $1 in
 		exit 1
 	fi
 
+	echo $SSH addkey `hostname` 
 	$SSH addkey `hostname` > $NETSKEL_IDENTITY
 	chmod 400 $NETSKEL_IDENTITY
 	echo "Wrote secure identity to `ls -la $NETSKEL_IDENTITY`"
@@ -345,7 +346,7 @@ case $1 in
 	echo 'echo "Running Netskel bundler"' > $NETSKEL_INSTALL_SCRIPT
     echo 'test -d $HOME/bin || mkdir $HOME/bin' >> $NETSKEL_INSTALL_SCRIPT
     echo 'cat > netskel.xxdp << EOF' > $NETSKEL_INSTALL_SCRIPT
-    xxd -p $HOME/bin/netskel >> $NETSKEL_INSTALL_SCRIPT
+    xxd -p $0 >> $NETSKEL_INSTALL_SCRIPT
     echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
 	echo 'xxd -p -r netskel.xxdp > $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
 	echo 'rm netskel.xxdp' >> $NETSKEL_INSTALL_SCRIPT
@@ -354,7 +355,7 @@ case $1 in
     echo 'echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
 
     netskel_log "Pushing netskel install to $2"
-    ssh -Tq $2 < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
+    ssh -ATq $2 < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
 
     netskel_cleanup
     exit 0
