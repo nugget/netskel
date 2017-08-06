@@ -58,6 +58,11 @@ func dbFileLine(filename string) {
 	fmt.Printf("%s\t%o\t*\t%d\t%x\n", trimmed, mode, file.Size(), hash)
 }
 
+func dbDirLine(directory string) {
+	trimmed := strings.TrimPrefix(directory, "./")
+	fmt.Printf("%s/\t%d\t*\n", trimmed, 700)
+}
+
 func listDir(dirname string) {
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
@@ -74,8 +79,7 @@ func listDir(dirname string) {
 
 		switch mode := file.Mode(); {
 		case mode.IsDir():
-			trimmed := strings.TrimPrefix(fullname, "./")
-			fmt.Printf("%s/\t%d\t*\n", trimmed, 700)
+			dbDirLine(fullname)
 			listDir(fullname)
 		case mode.IsRegular():
 			dbFileLine(fullname)
@@ -87,10 +91,13 @@ func netskelDB() {
 	servername, _ := os.Hostname()
 	now := time.Now().Format("Mon, 2 Jan 2006 15:04:05 UTC")
 
-	os.Chdir("db")
-
 	fmt.Printf("#\n# .netskeldb for %v\n#\n# Generated %v by %v\n#\n", CLIENT, now, servername)
 
+	// Force-inject the client itself
+	dbDirLine("bin")
+	dbFileLine("bin/netskel")
+
+	os.Chdir("db")
 	listDir(".")
 
 	os.Exit(0)
@@ -202,6 +209,11 @@ func main() {
 
 	case "sendfile":
 		filename := nsCommand[1]
+
+		if filename == "db/bin/netskel" {
+			filename = "bin/netskel"
+		}
+
 		hexdump(filename)
 
 	case "addkey":

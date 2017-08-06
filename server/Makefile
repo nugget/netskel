@@ -13,4 +13,6 @@ install:
 	install -o netskel -g netskel -m 0700 -d $(TARGET)/.ssh
 	install -o netskel -g netskel -m 0550 server $(BINDIR)
 	install -o netskel -g netskel -m 2770 -d $(DBDIR)
+	install -o netskel -g netskel -m 0755 ../client/netskel $(BINDIR)
+	
 	cd $(DBDIR) && git init --shared=group
