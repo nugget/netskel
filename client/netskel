@@ -9,9 +9,6 @@ NETSKEL_RC=$HOME/.netskel/config
 NETSKEL_ROOT=$HOME
 NETSKEL_IDENTITY=$HOME/.netskel/identity
 
-# Default settings from netskel repisitory
-NETSKEL_SERVER=netskel@netskel.macnugget.org
-
 # Load in our local config variables
 if [ -r $NETSKEL_RC ] ; then
  . $NETSKEL_RC
