@@ -325,16 +325,16 @@ case $1 in
       rm -f $HOME/.netskelrc
     fi
 
-	if [ -r $HOME/.netskel/identity ] ; then
-		echo "ERROR: ~/.netskel/identity already exists"
-		echo "       Please remove this file if you want to re-init"
-		exit 1
-	fi
+    if [ -r $HOME/.netskel/identity ] ; then
+      echo "ERROR: ~/.netskel/identity already exists"
+      echo "       Please remove this file if you want to re-init"
+      exit 1
+    fi
 
-	echo $SSH addkey `hostname` 
-	$SSH addkey `hostname` > $NETSKEL_IDENTITY
-	chmod 400 $NETSKEL_IDENTITY
-	echo "Wrote secure identity to `ls -la $NETSKEL_IDENTITY`"
+    echo $SSH addkey `hostname` 
+    $SSH addkey `hostname` > $NETSKEL_IDENTITY
+    chmod 400 $NETSKEL_IDENTITY
+    echo "Wrote secure identity to `ls -la $NETSKEL_IDENTITY`"
 
     netskel_cleanup
     exit 0
@@ -343,13 +343,13 @@ case $1 in
   push)
     NETSKEL_INSTALL_SCRIPT=$NETSKEL_TMP/install.sh
 
-	echo 'echo "Running Netskel bundler"' > $NETSKEL_INSTALL_SCRIPT
+    echo 'echo "Running Netskel bundler"' > $NETSKEL_INSTALL_SCRIPT
     echo 'test -d $HOME/bin || mkdir $HOME/bin' >> $NETSKEL_INSTALL_SCRIPT
     echo 'cat > netskel.xxdp << EOF' > $NETSKEL_INSTALL_SCRIPT
     xxd -p $0 >> $NETSKEL_INSTALL_SCRIPT
     echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
-	echo 'xxd -p -r netskel.xxdp > $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
-	echo 'rm netskel.xxdp' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'xxd -p -r netskel.xxdp > $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'rm netskel.xxdp' >> $NETSKEL_INSTALL_SCRIPT
     echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
     echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
     echo 'echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
