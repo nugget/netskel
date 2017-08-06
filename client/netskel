@@ -285,14 +285,14 @@ case $1 in
     echo 'echo "Running Netskel bundler"' > $NETSKEL_INSTALL_SCRIPT
     echo 'test -d $HOME/bin || mkdir $HOME/bin' >> $NETSKEL_INSTALL_SCRIPT
 
-    echo 'cat > netskel.xxdp << EOF' > $NETSKEL_INSTALL_SCRIPT
+    echo 'cat > netskel.xxdp << EOF' >> $NETSKEL_INSTALL_SCRIPT
     xxd -p $0 >> $NETSKEL_INSTALL_SCRIPT
     echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
     echo 'xxd -p -r netskel.xxdp > $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
     echo 'rm netskel.xxdp' >> $NETSKEL_INSTALL_SCRIPT
     echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
 
-    echo 'cat > netskelrc.xxdp << EOF' > $NETSKEL_INSTALL_SCRIPT
+    echo 'cat > netskelrc.xxdp << EOF' >> $NETSKEL_INSTALL_SCRIPT
     xxd -p $HOME/.netskel/config >> $NETSKEL_INSTALL_SCRIPT
     echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
     echo 'xxd -p -r netskelrc.xxdp > $HOME/.netskel/config' >> $NETSKEL_INSTALL_SCRIPT
