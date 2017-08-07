@@ -14,10 +14,14 @@ if [ -r $NETSKEL_RC ] ; then
  . $NETSKEL_RC
 fi
 
+if [ -r $NETSKEL_IDENTITY ] ; then
+  NETSKEL_UUID=`grep "CLIENT_UUID" $HOME/.netskel/identity | tr -s ' ' | cut -d ' ' -f 3`
+fi
+
 # Ensure that DEBUG is set
 
 if [ ${NETSKEL_DEBUG:-0} = 0 ] ; then
-    NETSKEL_DEBUG=0
+  NETSKEL_DEBUG=0
 fi
 
 # Functions
@@ -240,7 +244,7 @@ fi
 case $1 in
   sync)
     # Grab latest netskeldb
-    $SSH netskeldb > $NETSKEL_TMP/.netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
+    $SSH netskeldb $NETSKEL_UUID > $NETSKEL_TMP/.netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
 
     # Check all the files in db, see if they need synching
     for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do
