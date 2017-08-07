@@ -205,7 +205,7 @@ func clientHeartbeat(uuid, inet string) {
 }
 
 func clientPut(uuid, key, value string) {
-	db, err := bolt.Open("clients.db", 0600, &bolt.Options{Timeout: 2 * time.Second})
+	db, err := bolt.Open("clients.db", 0660, &bolt.Options{Timeout: 2 * time.Second})
 	if err != nil {
 		Warn("Unable to open client database: %v", err)
 		return
@@ -226,30 +226,6 @@ func clientPut(uuid, key, value string) {
 		Warn("clientHeartbeat error %v", berr)
 	}
 
-}
-
-func showClients() {
-	db, err := bolt.Open("clients.db", 0600, nil)
-	if err != nil {
-		Warn("Unable to open client database: %v", err)
-		return
-	}
-	defer db.Close()
-
-	err = db.View(func(tx *bolt.Tx) error {
-		return tx.ForEach(func(name []byte, _ *bolt.Bucket) error {
-			fmt.Printf("[%s]\n", name)
-
-			b := tx.Bucket(name)
-			c := b.Cursor()
-
-			for k, v := c.First(); k != nil; k, v = c.Next() {
-				fmt.Printf("   %s: %s\n", k, v)
-			}
-
-			return nil
-		})
-	})
 }
 
 func main() {
@@ -301,9 +277,6 @@ func main() {
 	case "addkey":
 		key := nsCommand[1]
 		addKey(key)
-
-	case "clientstats":
-		showClients()
 
 	default:
 		syntaxError()

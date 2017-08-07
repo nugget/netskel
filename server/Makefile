@@ -16,3 +16,10 @@ install:
 	install -o netskel -g netskel -m 0755 ../client/netskel $(BINDIR)
 	
 	cd $(DBDIR) && git init --shared=group
+
+userzero:
+	install -m 0700 -d $(HOME)/.netskel
+	install -m 0700 -d $(HOME)/bin
+	install -m 0700 ../client/netskel $(HOME)/bin
+	$(HOME)/bin/netskel init
+	$(HOME)/bin/netskel sync
