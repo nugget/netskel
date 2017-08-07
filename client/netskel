@@ -277,7 +277,6 @@ case $1 in
       exit 1
     fi
 
-    echo $SSH addkey `hostname` 
     $SSH addkey `hostname` > $NETSKEL_IDENTITY
     chmod 400 $NETSKEL_IDENTITY
     NETSKEL_UUID=`grep "CLIENT_UUID" $HOME/.netskel/identity | tr -s ' ' | cut -d ' ' -f 3`
