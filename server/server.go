@@ -10,17 +10,19 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/blackjack/syslog"
+	"github.com/boltdb/bolt"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/ssh"
 )
 
 var (
 	AUTHKEYSFILE string = os.Getenv("HOME") + "/.ssh/authorized_keys"
-	CLIENT       string = os.Getenv("SSH_CLIENT")
+	CLIENT       string = strings.Split(os.Getenv("SSH_CLIENT"), " ")[0]
 )
 
 func Debug(format string, a ...interface{}) {
@@ -92,7 +94,7 @@ func netskelDB(cuuid string) {
 	servername, _ := os.Hostname()
 	now := time.Now().Format("Mon, 2 Jan 2006 15:04:05 UTC")
 
-	fmt.Printf("#\n# .netskeldb for %v/%s\n#\n# Generated %v by %v\n#\n", CLIENT, cuuid, now, servername)
+	fmt.Printf("#\n# .netskeldb for %s at %v\n#\n# Generated %v by %v\n#\n", cuuid, CLIENT, now, servername)
 
 	// Force-inject the client itself
 	dbDirLine("bin")
@@ -144,8 +146,10 @@ func hexdump(filename string) {
 
 func addKey(hostname string) {
 	servername, err := os.Hostname()
-	now := time.Now().Format("Mon Jan _2 15:04:05 2006")
+	now := time.Now()
+	nowFmt := now.Format("Mon Jan _2 15:04:05 2006")
 	uuid := uuid.NewV4()
+	cuuid := uuid.String()
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -172,7 +176,7 @@ func addKey(hostname string) {
 
 	defer f.Close()
 
-	if _, err = f.WriteString("restrict " + pubdata + " " + hostname + " " + uuid.String() + " " + now + "\n"); err != nil {
+	if _, err = f.WriteString("restrict " + pubdata + " " + hostname + " " + cuuid + " " + nowFmt + "\n"); err != nil {
 		panic(err)
 	}
 
@@ -182,7 +186,70 @@ func addKey(hostname string) {
 	//fmt.Println("-- ")
 	//fmt.Println(string(pubdata))
 
+	secs := strconv.Itoa(int(now.Unix()))
+
+	clientPut(cuuid, "hostname", hostname)
+	clientPut(cuuid, "originalHostname", hostname)
+	clientPut(cuuid, "created", secs)
+
 	os.Exit(0)
+}
+
+func clientHeartbeat(uuid, inet string) {
+	now := time.Now()
+	secs := strconv.Itoa(int(now.Unix()))
+
+	clientPut(uuid, "inet", inet)
+	clientPut(uuid, "lastSeen", secs)
+	Log("Stored heartbeat for %v", uuid)
+}
+
+func clientPut(uuid, key, value string) {
+	db, err := bolt.Open("clients.db", 0600, &bolt.Options{Timeout: 2 * time.Second})
+	if err != nil {
+		Warn("Unable to open client database: %v", err)
+		return
+	}
+	defer db.Close()
+
+	berr := db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(uuid))
+		if err != nil {
+			return fmt.Errorf("Can't create bucket for %s: %v", uuid, err)
+		}
+
+		perr := b.Put([]byte(key), []byte(value))
+		return perr
+	})
+
+	if berr != nil {
+		Warn("clientHeartbeat error %v", berr)
+	}
+
+}
+
+func showClients() {
+	db, err := bolt.Open("clients.db", 0600, nil)
+	if err != nil {
+		Warn("Unable to open client database: %v", err)
+		return
+	}
+	defer db.Close()
+
+	err = db.View(func(tx *bolt.Tx) error {
+		return tx.ForEach(func(name []byte, _ *bolt.Bucket) error {
+			fmt.Printf("[%s]\n", name)
+
+			b := tx.Bucket(name)
+			c := b.Cursor()
+
+			for k, v := c.First(); k != nil; k, v = c.Next() {
+				fmt.Printf("   %s: %s\n", k, v)
+			}
+
+			return nil
+		})
+	})
 }
 
 func main() {
@@ -213,6 +280,8 @@ func main() {
 				cuuid = c.String()
 			}
 		}
+
+		clientHeartbeat(cuuid, CLIENT)
 		netskelDB(cuuid)
 
 	case "sha1":
@@ -232,6 +301,9 @@ func main() {
 	case "addkey":
 		key := nsCommand[1]
 		addKey(key)
+
+	case "clientstats":
+		showClients()
 
 	default:
 		syntaxError()
