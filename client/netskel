@@ -15,7 +15,7 @@ if [ -r $NETSKEL_RC ] ; then
 fi
 
 if [ -r $NETSKEL_IDENTITY ] ; then
-  NETSKEL_UUID=`grep "CLIENT_UUID" $HOME/.netskel/identity | tr -s ' ' | cut -d ' ' -f 3`
+  NETSKEL_UUID=`grep "CLIENT_UUID" $NETSKEL_IDENTITY | tr -s ' ' | cut -d ' ' -f 3`
 fi
 
 # Ensure that DEBUG is set
@@ -268,16 +268,32 @@ case $1 in
       rm -f $HOME/.netskelrc
     fi
 
-    if [ -r $HOME/.netskel/identity ] ; then
-      echo "ERROR: ~/.netskel/identity already exists"
+    if [ -r $NETSKEL_IDENTITY ] ; then
+      echo "ERROR: $NETSKEL_IDENTITY already exists"
       echo "       Please remove this file if you want to re-init"
+	  echo " "
+	  ls -la $NETSKEL_IDENTITY
+	  echo " "
       exit 1
     fi
 
     echo $SSH addkey `hostname` 
     $SSH addkey `hostname` > $NETSKEL_IDENTITY
     chmod 400 $NETSKEL_IDENTITY
-    echo "Wrote secure identity to `ls -la $NETSKEL_IDENTITY`"
+    NETSKEL_UUID=`grep "CLIENT_UUID" $HOME/.netskel/identity | tr -s ' ' | cut -d ' ' -f 3`
+
+    if [ "$NETSKEL_UUID" = "" ] ; then
+		echo "ERROR: Failed to receive Client ID and Private Key from Netskel Server"
+		echo " "
+		ls -la $NETSKEL_IDENTITY
+		echo " "
+		rm -f $NETSKEL_IDENTITY
+		exit 1
+	fi
+
+	echo " "
+	echo "The Netskel server assigned client ID: $NETSKEL_UUID"
+	echo " "
 
     netskel_cleanup
     exit 0
@@ -286,7 +302,9 @@ case $1 in
   push)
     NETSKEL_INSTALL_SCRIPT=$NETSKEL_TMP/install.sh
 
-    echo 'echo "Running Netskel bundler"' > $NETSKEL_INSTALL_SCRIPT
+	netskel_log "Bundling a Netskel Install Pack for $1"
+
+    echo 'echo "Running Netskel Install Pack on `hostname`"' > $NETSKEL_INSTALL_SCRIPT
     echo 'test -d $HOME/bin || mkdir $HOME/bin' >> $NETSKEL_INSTALL_SCRIPT
 
     echo 'cat > netskel.xxdp << EOF' >> $NETSKEL_INSTALL_SCRIPT
@@ -303,11 +321,14 @@ case $1 in
     echo 'rm netskelrc.xxdp' >> $NETSKEL_INSTALL_SCRIPT
     echo 'chmod 600 $HOME/.netskel/config' >> $NETSKEL_INSTALL_SCRIPT
 
-    echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
-    echo 'echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
+    echo '$HOME/bin/netskel init && \' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'echo "Syncing this host for the first time:" && \' >> $NETSKEL_INSTALL_SCRIPT
+	echo '$HOME/bin/netskel sync' >> $NETSKEL_INSTALL_SCRIPT
 
-    netskel_log "Pushing netskel install to $2"
-    ssh -ATq $2 < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
+    netskel_log "Pushing Pack:"
+	echo "-- "
+    ssh -ATq -o ConnectTimeout=5 $2 /bin/sh < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
+	echo "-- "
 
     netskel_cleanup
     exit 0
