@@ -90,7 +90,7 @@ func listDir(dirname string) {
 	}
 }
 
-func netskelDB(cuuid string) {
+func netskelDB(cuuid, hostname string) {
 	servername, _ := os.Hostname()
 	now := time.Now().Format("Mon, 2 Jan 2006 15:04:05 UTC")
 
@@ -258,7 +258,7 @@ func main() {
 		}
 
 		clientHeartbeat(cuuid, CLIENT, hostname)
-		netskelDB(cuuid)
+		netskelDB(cuuid, hostname)
 
 	case "md5":
 		filename := nsCommand[1]
