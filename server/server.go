@@ -202,7 +202,7 @@ func clientHeartbeat() {
 	clientPut(UUID, "inet", CLIENT)
 	clientPut(UUID, "lastSeen", secs)
 	clientPut(UUID, "hostname", HOSTNAME)
-	clientPut(UUID, "username", HOSTNAME)
+	clientPut(UUID, "username", USERNAME)
 
 	Debug("Stored heartbeat for %v", UUID)
 }
