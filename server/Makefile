@@ -19,6 +19,7 @@ install:
 
 userzero:
 	install -m 0700 -d $(HOME)/.netskel
+	echo "NETSKEL_SERVER=netskel@`hostname`" > $(HOME)/.netskel/config
 	install -m 0700 -d $(HOME)/bin
 	install -m 0700 ../client/netskel $(HOME)/bin
 	$(HOME)/bin/netskel init
