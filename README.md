@@ -7,9 +7,9 @@
 
                         netskel environment synchronizer
 ```
-INTRODUCTION
+# INTRODUCTION
 
-netskel is an http(s) based file synchronization tool which can be used to 
+netskel is an ssh based file synchronization tool which can be used to 
 mirror a central repository of files to multiple UNIX shell accounts.  It was
 built to create a simple and automated mechanism for users to push out their
 various shell environment config files to all the machines where they have
@@ -20,3 +20,31 @@ authorized_keys file to all your hosts.  Using netskel will allow you to make
 centralized changes and updates to your unix enviornment without suffering
 through the tedium of applying those changes to the multitude of hosts where
 you have an account.
+
+# VERSION 3.0 BREAKING CHANGES 
+
+If you are a current Netskel user with a previous version, please be aware
+the current v3.0 release is a complete and total overhaul of the Netskel
+system.  The old releases required Apache web server and used http/https as
+the deployment mechanism.  This update re-write is entirely ssh-based and 
+no longer uses or requires a web server to host the back end service
+
+## SERVER REQUIREMENTS
+
+* A server that can be reached via ssh from all of your client installations
+* A user account on that server to operate the backend service
+
+## CLIENT REQUIREMENTS
+
+* A reasonably POSIX-flavoured system that has Bourne shell (`/bin/sh`) and 
+  a modest assortment of the usual Unix tools.
+* The `xxd` binary (part of vim, should be on any Linux and macOS box but will
+  require the vim port/package on FreeBSD.  This replaces the older Netskel's
+  reliance on `uuencode` and `uudecode` which is no longer reliably present on
+  modern machines.
+
+# INSTALLATION
+
+* Create a user on your server to hold the server code and your userland
+  database.  This user's homedirectory will be your install path.  Suggest
+  `/usr/local/netskel`
