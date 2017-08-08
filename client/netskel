@@ -10,6 +10,9 @@ NETSKEL_ROOT=$HOME
 NETSKEL_IDENTITY=$HOME/.netskel/identity
 NETSKEL_PORT=22
 
+HOSTNAME=`hostname`
+USERNAME=`whoami`
+
 # Load in our local config variables
 if [ -r $NETSKEL_RC ] ; then
  . $NETSKEL_RC
@@ -142,7 +145,7 @@ netskel_cleanup() {
 netskel_fetch_file() {
   NETSKEL_TARGET=$NETSKEL_TMP/`basename $1`
 
-  $SSH sendfile db/$1 $NETSKEL_UUID `hostname` > $NETSKEL_TMP/xxdfile && xxd -p -r $NETSKEL_TMP/xxdfile > $NETSKEL_TARGET
+  $SSH sendfile db/$1 $NETSKEL_UUID $USERNAME $HOSTNAME > $NETSKEL_TMP/xxdfile && xxd -p -r $NETSKEL_TMP/xxdfile > $NETSKEL_TARGET
   RETVAL=$?
 
   rm -f $NETSKEL_TMP/xxdfile
@@ -245,7 +248,7 @@ fi
 case $1 in
   sync)
     # Grab latest netskeldb
-    $SSH netskeldb $NETSKEL_UUID `hostname` > $NETSKEL_TMP/.netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
+	$SSH netskeldb $NETSKEL_UUID $USERNAME $HOSTNAME > $NETSKEL_TMP/.netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
 
     # Check all the files in db, see if they need synching
     for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do
@@ -278,7 +281,7 @@ case $1 in
       exit 1
     fi
 
-    $SSH addkey `hostname` > $NETSKEL_IDENTITY
+	$SSH addkey $USERNAME $HOSTNAME > $NETSKEL_IDENTITY
     chmod 400 $NETSKEL_IDENTITY
     NETSKEL_UUID=`grep "CLIENT_UUID" $HOME/.netskel/identity | tr -s ' ' | cut -d ' ' -f 3`
 
