@@ -245,7 +245,7 @@ fi
 case $1 in
   sync)
     # Grab latest netskeldb
-    $SSH netskeldb $NETSKEL_UUID > $NETSKEL_TMP/.netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
+    $SSH netskeldb $NETSKEL_UUID `hostname` > $NETSKEL_TMP/.netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
 
     # Check all the files in db, see if they need synching
     for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do

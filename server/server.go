@@ -192,12 +192,15 @@ func addKey(hostname string) {
 	Log("Added %d byte public key to %s for %s (%v) uuid %s", len(pubdata), AUTHKEYSFILE, hostname, CLIENT, uuid)
 }
 
-func clientHeartbeat(uuid, inet string) {
+func clientHeartbeat(uuid, inet, hostname string) {
 	now := time.Now()
 	secs := strconv.Itoa(int(now.Unix()))
 
 	clientPut(uuid, "inet", inet)
 	clientPut(uuid, "lastSeen", secs)
+	if hostname != "unknown" {
+		clientPut(uuid, "hostname", hostname)
+	}
 	Debug("Stored heartbeat for %v", uuid)
 }
 
@@ -239,6 +242,7 @@ func main() {
 	switch command {
 	case "netskeldb":
 		cuuid := "nouuid"
+		hostname := "unknown"
 
 		if len(nsCommand) > 1 {
 			c, err := uuid.FromString(nsCommand[1])
@@ -249,10 +253,14 @@ func main() {
 			}
 		}
 
-		clientHeartbeat(cuuid, CLIENT)
+		if len(nsCommand) > 2 {
+			hostname = nsCommand[2]
+		}
+
+		clientHeartbeat(cuuid, CLIENT, hostname)
 		netskelDB(cuuid)
 
-	case "sha1":
+	case "md5":
 		filename := nsCommand[1]
 		hash, _ := fingerprint(filename)
 		fmt.Println(hash)
