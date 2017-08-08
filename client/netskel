@@ -8,6 +8,7 @@ NETSKEL_TMP=$HOME/.netskel/tmp
 NETSKEL_RC=$HOME/.netskel/config
 NETSKEL_ROOT=$HOME
 NETSKEL_IDENTITY=$HOME/.netskel/identity
+NETSKEL_PORT=22
 
 # Load in our local config variables
 if [ -r $NETSKEL_RC ] ; then
@@ -115,9 +116,9 @@ netskel_preflight() {
   fi
 
   if [ -r $NETSKEL_IDENTITY ] ; then
-    SSH="$NETSKEL_PATH_ssh -i $NETSKEL_IDENTITY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q $NETSKEL_SERVER"
+    SSH="$NETSKEL_PATH_ssh -p $NETSKEL_PORT -i $NETSKEL_IDENTITY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q $NETSKEL_SERVER"
   else
-    SSH="$NETSKEL_PATH_ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q $NETSKEL_SERVER"
+    SSH="$NETSKEL_PATH_ssh -p $NETSKEL_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q $NETSKEL_SERVER"
   fi
 }
 
