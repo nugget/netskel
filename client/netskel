@@ -142,7 +142,7 @@ netskel_cleanup() {
 netskel_fetch_file() {
   NETSKEL_TARGET=$NETSKEL_TMP/`basename $1`
 
-  $SSH sendfile db/$1 > $NETSKEL_TMP/xxdfile && xxd -p -r $NETSKEL_TMP/xxdfile > $NETSKEL_TARGET
+  $SSH sendfile db/$1 $NETSKEL_UUID `hostname` > $NETSKEL_TMP/xxdfile && xxd -p -r $NETSKEL_TMP/xxdfile > $NETSKEL_TARGET
   RETVAL=$?
 
   rm -f $NETSKEL_TMP/xxdfile

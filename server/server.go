@@ -23,6 +23,8 @@ import (
 var (
 	AUTHKEYSFILE string = os.Getenv("HOME") + "/.ssh/authorized_keys"
 	CLIENT       string = strings.Split(os.Getenv("SSH_CLIENT"), " ")[0]
+	UUID         string
+	HOSTNAME     string
 )
 
 func Debug(format string, a ...interface{}) {
@@ -90,11 +92,11 @@ func listDir(dirname string) {
 	}
 }
 
-func netskelDB(cuuid, hostname string) {
+func netskelDB() {
 	servername, _ := os.Hostname()
 	now := time.Now().Format("Mon, 2 Jan 2006 15:04:05 UTC")
 
-	fmt.Printf("#\n# .netskeldb for %s at %v\n#\n# Generated %v by %v\n#\n", cuuid, CLIENT, now, servername)
+	fmt.Printf("#\n# .netskeldb for %s at %v\n#\n# Generated %v by %v\n#\n", UUID, CLIENT, now, servername)
 
 	// Force-inject the client itself
 	dbDirLine("bin")
@@ -103,7 +105,7 @@ func netskelDB(cuuid, hostname string) {
 	os.Chdir("db")
 	listDir(".")
 
-	Log("Sent netskeldb to %s at %s (%s)", hostname, CLIENT, cuuid)
+	Log("Sent netskeldb to %s at %s (%s)", HOSTNAME, CLIENT, UUID)
 }
 
 func fingerprint(filename string) ([]byte, error) {
@@ -142,7 +144,7 @@ func hexdump(filename string) {
 		}
 	}
 	fmt.Printf("\n")
-	Log("Sent %s (%d bytes) to %s", filename, len(file), CLIENT)
+	Log("Sent %s (%d bytes) to %s at %s (%s)", filename, len(file), HOSTNAME, CLIENT, UUID)
 }
 
 func addKey(hostname string) {
@@ -223,8 +225,28 @@ func clientPut(uuid, key, value string) {
 	})
 
 	if berr != nil {
-		Warn("clientHeartbeat error %v", berr)
+		Warn("clientPut error %v", berr)
 	}
+}
+
+func parseUH(nsCommand []string, uuid_pos, hostname_pos int) (string, string) {
+	cuuid := "nouuid"
+	hostname := "unknown"
+
+	if len(nsCommand) > uuid_pos {
+		c, err := uuid.FromString(nsCommand[uuid_pos])
+		if err != nil {
+			Warn("Unable to parse client-supplied UUID %v: %v", nsCommand[uuid_pos], err)
+		} else {
+			cuuid = c.String()
+		}
+	}
+
+	if len(nsCommand) > hostname_pos {
+		hostname = nsCommand[hostname_pos]
+	}
+
+	return cuuid, hostname
 }
 
 func main() {
@@ -241,24 +263,10 @@ func main() {
 
 	switch command {
 	case "netskeldb":
-		cuuid := "nouuid"
-		hostname := "unknown"
+		UUID, HOSTNAME = parseUH(nsCommand, 1, 2)
 
-		if len(nsCommand) > 1 {
-			c, err := uuid.FromString(nsCommand[1])
-			if err != nil {
-				Warn("Unable to parse client-supplied UUID %v: %v", nsCommand[1], err)
-			} else {
-				cuuid = c.String()
-			}
-		}
-
-		if len(nsCommand) > 2 {
-			hostname = nsCommand[2]
-		}
-
-		clientHeartbeat(cuuid, CLIENT, hostname)
-		netskelDB(cuuid, hostname)
+		clientHeartbeat(UUID, CLIENT, HOSTNAME)
+		netskelDB()
 
 	case "md5":
 		filename := nsCommand[1]
@@ -267,6 +275,7 @@ func main() {
 
 	case "sendfile":
 		filename := nsCommand[1]
+		UUID, HOSTNAME = parseUH(nsCommand, 2, 3)
 
 		if filename == "db/bin/netskel" {
 			filename = "bin/netskel"
@@ -275,8 +284,8 @@ func main() {
 		hexdump(filename)
 
 	case "addkey":
-		key := nsCommand[1]
-		addKey(key)
+		HOSTNAME = nsCommand[1]
+		addKey(HOSTNAME)
 
 	default:
 		syntaxError()
