@@ -1,28 +1,31 @@
 #!/bin/sh
 
-# Default netskel settings (override in ~/.netskelrc)
+# Default netskel settings (override in ~/.netskel/config)
 NETSKEL_LOGFILE=$HOME/.netskel/activity.log
 NETSKEL_LOGFILE_LIMIT=512
 NETSKEL_DBFILE=$HOME/.netskel/dbfile
 NETSKEL_TMP=$HOME/.netskel/tmp
 NETSKEL_RC=$HOME/.netskel/config
 NETSKEL_ROOT=$HOME
+NETSKEL_IDENTITY=$HOME/.netskel/identity
+NETSKEL_PORT=22
 
-# Default settings from netskel repisitory
-NETSKEL_USER=%USER%
-NETSKEL_HOST=%HOST%
-NETSKEL_BASE=%BASE%
-NETSKEL_PROTO=%PROTO%
+HOSTNAME=`hostname`
+USERNAME=`whoami`
 
 # Load in our local config variables
 if [ -r $NETSKEL_RC ] ; then
  . $NETSKEL_RC
 fi
 
+if [ -r $NETSKEL_IDENTITY ] ; then
+  NETSKEL_UUID=`grep "CLIENT_UUID" $NETSKEL_IDENTITY | tr -s ' ' | cut -d ' ' -f 3`
+fi
+
 # Ensure that DEBUG is set
 
 if [ ${NETSKEL_DEBUG:-0} = 0 ] ; then
-    NETSKEL_DEBUG=0
+  NETSKEL_DEBUG=0
 fi
 
 # Functions
@@ -106,17 +109,19 @@ netskel_preflight() {
   netskel_path_push $HOME/bin
   netskel_trace "Path set to $PATH"
   
-  netskel_find_executable fetch
-  netskel_find_executable wget
-  netskel_find_executable curl
-  netskel_find_executable lynx
-
   netskel_find_executable stat
   netskel_find_executable md5
   netskel_find_executable md5sum
+  netskel_find_executable ssh
 
   if [ -x $HOME/bin/pre-netskel ] ; then
     $HOME/bin/pre-netskel
+  fi
+
+  if [ -r $NETSKEL_IDENTITY ] ; then
+    SSH="$NETSKEL_PATH_ssh -p $NETSKEL_PORT -i $NETSKEL_IDENTITY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q $NETSKEL_SERVER"
+  else
+    SSH="$NETSKEL_PATH_ssh -p $NETSKEL_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q $NETSKEL_SERVER"
   fi
 }
 
@@ -137,66 +142,13 @@ netskel_cleanup() {
   fi
 }
 
-netskel_fetch_with_curl() {
-  if [ "$NETSKEL_PATH_curl" = "" ] ; then
-    return 1
-  fi
-  if [ ! -x $NETSKEL_PATH_curl ] ; then
-    return 1
-  fi
-  $NETSKEL_PATH_curl -k -s -o $2 $1 >/dev/null 2>/dev/null
-  RETVAL=$?
-  if [ $RETVAL = 0 ] ; then
-    netskel_trace "fetched $1 to $2 using curl"
-  fi
-  return $RETVAL
-}
-
-netskel_fetch_with_fetch() {
-  if [ "$NETSKEL_PATH_fetch" = "" ] ; then
-    return 1
-  fi
-  if [ ! -x $NETSKEL_PATH_fetch ] ; then
-    return 1
-  fi
-  $NETSKEL_PATH_fetch -q -o $2 $1 >/dev/null 2>/dev/null
-  RETVAL=$?
-  if [ $RETVAL = 0 ] ; then
-    netskel_trace "fetched $1 to $2 using fetch"
-  fi
-  return $RETVAL
-}
-
-netskel_fetch_with_wget() {
-  if [ "$NETSKEL_PATH_wget" = "" ] ; then
-    return 1
-  fi
-  if [ ! -x $NETSKEL_PATH_wget ] ; then
-    return 1
-  fi
-
-  $NETSKEL_PATH_wget --no-check-certificate -q -O $2 $1 >/dev/null 2>/dev/null
-  if [ ! -r $2 ] ; then
-    $NETSKEL_PATH_wget -q -O $2 $1 
-  fi
-
-  if [ -r $2 ] ; then
-    netskel_trace "fetched $1 to $2 using wget"
-    return 0
-  else
-    return 1
-  fi
-}
-
 netskel_fetch_file() {
   NETSKEL_TARGET=$NETSKEL_TMP/`basename $1`
 
-  NETSKEL_URL=$NETSKEL_PROTO://$NETSKEL_HOST$NETSKEL_BASE/$NETSKEL_USER/$1
-
-  netskel_fetch_with_curl  $NETSKEL_URL $NETSKEL_TARGET || \
-  netskel_fetch_with_fetch $NETSKEL_URL $NETSKEL_TARGET || \
-  netskel_fetch_with_wget  $NETSKEL_URL $NETSKEL_TARGET
+  $SSH sendfile db/$1 $NETSKEL_UUID $USERNAME $HOSTNAME > $NETSKEL_TMP/xxdfile && xxd -p -r $NETSKEL_TMP/xxdfile > $NETSKEL_TARGET
   RETVAL=$?
+
+  rm -f $NETSKEL_TMP/xxdfile
 
   return $RETVAL
 }
@@ -296,7 +248,7 @@ fi
 case $1 in
   sync)
     # Grab latest netskeldb
-    netskel_fetch_file .netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
+	$SSH netskeldb $NETSKEL_UUID $USERNAME $HOSTNAME > $NETSKEL_TMP/.netskeldb && mv $NETSKEL_TMP/.netskeldb $NETSKEL_DBFILE || netskel_die "Unable to fetch dbfile"
 
     # Check all the files in db, see if they need synching
     for file in `grep -v "#" $NETSKEL_DBFILE | cut -f 1 | xargs`; do
@@ -320,28 +272,66 @@ case $1 in
       rm -f $HOME/.netskelrc
     fi
 
+    if [ -r $NETSKEL_IDENTITY ] ; then
+      echo "ERROR: $NETSKEL_IDENTITY already exists"
+      echo "       Please remove this file if you want to re-init"
+	  echo " "
+	  ls -la $NETSKEL_IDENTITY
+	  echo " "
+      exit 1
+    fi
+
+	$SSH addkey $USERNAME $HOSTNAME > $NETSKEL_IDENTITY
+    chmod 400 $NETSKEL_IDENTITY
+    NETSKEL_UUID=`grep "CLIENT_UUID" $HOME/.netskel/identity | tr -s ' ' | cut -d ' ' -f 3`
+
+    if [ "$NETSKEL_UUID" = "" ] ; then
+		echo "ERROR: Failed to receive Client ID and Private Key from Netskel Server"
+		echo " "
+		ls -la $NETSKEL_IDENTITY
+		echo " "
+		rm -f $NETSKEL_IDENTITY
+		exit 1
+	fi
+
+	echo " "
+	echo "The Netskel server assigned client ID: $NETSKEL_UUID"
+	echo " "
+
     netskel_cleanup
     exit 0
     ;;
 
   push)
-    # ping -c 1 -q $2 >/dev/null 2>/dev/null || netskel_die "Host $2 unreachable"
-
     NETSKEL_INSTALL_SCRIPT=$NETSKEL_TMP/install.sh
 
-    echo 'cat > netskel.uue << EOF' > $NETSKEL_INSTALL_SCRIPT
-    uuencode -m $HOME/bin/netskel netskel >> $NETSKEL_INSTALL_SCRIPT
-    echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
-    echo 'uudecode netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
-    echo 'test -d bin || mkdir bin' >> $NETSKEL_INSTALL_SCRIPT
-    echo 'mv netskel $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
-    echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
-    echo 'rm -f netskel.uue' >> $NETSKEL_INSTALL_SCRIPT
-    echo '$HOME/bin/netskel init' >> $NETSKEL_INSTALL_SCRIPT
-    echo 'echo "Synching this host for the first time:" && $HOME/bin/netskel sync && echo "Complete!" ; logout' >> $NETSKEL_INSTALL_SCRIPT
+	netskel_log "Bundling a Netskel Install Pack for $1"
 
-    netskel_log "Pushing netskel install to $2"
-    ssh -Tq $2 < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
+    echo 'echo "Running Netskel Install Pack on `hostname`"' > $NETSKEL_INSTALL_SCRIPT
+    echo 'test -d $HOME/bin || mkdir $HOME/bin' >> $NETSKEL_INSTALL_SCRIPT
+
+    echo 'cat > netskel.xxdp << EOF' >> $NETSKEL_INSTALL_SCRIPT
+    xxd -p $0 >> $NETSKEL_INSTALL_SCRIPT
+    echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'xxd -p -r netskel.xxdp > $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'rm netskel.xxdp' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'chmod 755 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
+
+    echo 'cat > netskelrc.xxdp << EOF' >> $NETSKEL_INSTALL_SCRIPT
+    xxd -p $HOME/.netskel/config >> $NETSKEL_INSTALL_SCRIPT
+    echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'xxd -p -r netskelrc.xxdp > $HOME/.netskel/config' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'rm netskelrc.xxdp' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'chmod 600 $HOME/.netskel/config' >> $NETSKEL_INSTALL_SCRIPT
+
+    echo '$HOME/bin/netskel init && \' >> $NETSKEL_INSTALL_SCRIPT
+    echo 'echo "Syncing this host for the first time:" && \' >> $NETSKEL_INSTALL_SCRIPT
+	echo '$HOME/bin/netskel sync' >> $NETSKEL_INSTALL_SCRIPT
+
+    netskel_log "Pushing Pack:"
+	echo "-- "
+    ssh -ATq -o ConnectTimeout=5 $2 /bin/sh < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
+	echo "-- "
 
     netskel_cleanup
     exit 0
