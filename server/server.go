@@ -103,7 +103,7 @@ func netskelDB(cuuid string) {
 	os.Chdir("db")
 	listDir(".")
 
-	Log("Sent netskeldb to %s (%s)", CLIENT, cuuid)
+	Log("Sent netskeldb to %s at %s (%s)", hostname, CLIENT, cuuid)
 }
 
 func fingerprint(filename string) ([]byte, error) {
