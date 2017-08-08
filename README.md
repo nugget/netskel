@@ -46,5 +46,19 @@ no longer uses or requires a web server to host the back end service
 # INSTALLATION
 
 * Create a user on your server to hold the server code and your userland
-  database.  This user's homedirectory will be your install path.  Suggest
-  `/usr/local/netskel`
+  database.  This user's homedirectory will be your install path.  Suggested
+  `/usr/local/netskel` with the user's shell as `/usr/local/netskel/bin/server`
+  and no password.
+* Copy your personal `authorized_keys` file to the netskel user's `.ssh` 
+  directory with the proper permissions.
+* Run `make && make install` from the `server` directory of this repo
+* Place any files and directories you want to deploy in the `./db/` folder of
+  your Netskel installation.  By default this is a git repo so you can use
+  version control to track changes and additions to it.
+* Run `make userzero` from the `server` directory of this repo, which will
+  bootstrap your current login on your host as the first deployment of the
+  client.  Verify that the server info in `~/.netskel/config` makes sense
+  to you.
+
+You should now be able to use `netskel push <hostname>` to deploy the netskel
+client from your current account to other hosts.
