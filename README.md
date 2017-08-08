@@ -31,8 +31,9 @@ no longer uses or requires a web server to host the back end service
 
 ## SERVER REQUIREMENTS
 
-* A server that can be reached via ssh from all of your client installations
-* A user account on that server to operate the backend service
+* [Go](https://golang.org) compiler to build the server binaries
+* A server that can be reached via ssh from your client installations
+* A dedicated user account on that server to operate the backend service
 
 ## CLIENT REQUIREMENTS
 
