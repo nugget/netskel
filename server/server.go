@@ -148,6 +148,16 @@ func hexdump(filename string) {
 	Log("Sent %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), USERNAME, HOSTNAME, CLIENT, UUID)
 }
 
+func sendRaw(filename string) {
+	file, err := ioutil.ReadFile(filename)
+	if err != nil {
+		Warn("Error trying to sendRaw %v: %v", filename, err)
+		os.Exit(1)
+	}
+	fmt.Printf("%v", string(file))
+	os.Exit(0)
+}
+
 func addKey() {
 	servername, err := os.Hostname()
 	now := time.Now()
@@ -288,6 +298,10 @@ func main() {
 		}
 
 		hexdump(filename)
+
+	case "rawclient":
+		filename := "bin/netskel"
+		sendRaw(filename)
 
 	case "addkey":
 		_, USERNAME, HOSTNAME = parseUNH(nsCommand, 1, 2, 3)
