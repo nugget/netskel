@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/nugget/netskel.svg?branch=master)](https://travis-ci.org/nugget/netskel)
+[![GitHub release](https://img.shields.io/github/release/nugget/netskel.svg)](https://github.com/nugget/netskel/releases)
+
 ```
                                     _       _        _ 
  David McNett            _ __   ___| |_ ___| | _____| |

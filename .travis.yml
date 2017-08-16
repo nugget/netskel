@@ -1,0 +1,11 @@
+language: go
+
+branches:
+  only:
+    - master
+
+install:
+  - go get -u -v ./...
+
+script:
+  - travis_wait 20 go test -p 10 -v ./...
