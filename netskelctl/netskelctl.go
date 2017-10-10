@@ -115,7 +115,7 @@ func transformKey(k, v []byte) []byte {
 	return retbuf
 }
 
-func clientInfo(search string) {
+func clientInfo(search string, days int) {
 	db, err := bolt.Open(BASEDIR+"/clients.db", 0660, nil)
 	if err != nil {
 		fmt.Printf("Unable to open client database: %v\n", err)
@@ -129,7 +129,7 @@ func clientInfo(search string) {
 		return tx.ForEach(func(name []byte, _ *bolt.Bucket) error {
 			searchHit := false
 
-			if strings.Contains(strings.ToLower(string(name)), strings.ToLower(search)) {
+			if search == "" || strings.Contains(strings.ToLower(string(name)), strings.ToLower(search)) {
 				searchHit = true
 			}
 
@@ -145,6 +145,25 @@ func clientInfo(search string) {
 				}
 			}
 
+			if days > 0 {
+				lastSeen, err := strconv.Atoi(string(b.Get([]byte("lastSeen"))))
+				if err == nil {
+					last64 := int64(lastSeen)
+					timeDiff := time.Now().Unix() - last64
+					daysDiff := timeDiff / 86400
+
+					if daysDiff < int64(days) {
+						Debug("%s seen %d days ago, skipping for audit", name, daysDiff)
+						searchHit = false
+					}
+				}
+			}
+
+			isDisabled := b.Get([]byte("disabled"))
+			if isDisabled != nil && !showDisabled {
+				searchHit = false
+			}
+
 			if searchHit == true {
 				fmt.Printf("[%s]\n", name)
 				for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -152,6 +171,7 @@ func clientInfo(search string) {
 					formatString := "  %-" + strconv.Itoa(widestK) + "s: %s\n"
 					fmt.Printf(formatString, k, v)
 				}
+				fmt.Println("")
 			}
 
 			return nil
@@ -221,6 +241,36 @@ func deleteClient(uuid string) error {
 	return berr
 }
 
+func getArg(pos int, def string) string {
+	if len(flag.Args()) < pos {
+		Debug("Can't get pos %d from len %d", pos, len(flag.Args()))
+		return def
+	}
+
+	val := flag.Arg(pos)
+
+	if val == "" {
+		return def
+	} else {
+		return val
+	}
+}
+
+func getArgInt(pos int, def int) int {
+	strArg := getArg(pos, "")
+
+	if strArg == "" {
+		return def
+	} else {
+		i, err := strconv.Atoi(strArg)
+		if err != nil {
+			return def
+		} else {
+			return i
+		}
+	}
+}
+
 func Usage() {
 	fmt.Println("usage: netskelctl [flags] <command>\n")
 	fmt.Println("Flags:")
@@ -231,6 +281,7 @@ func Usage() {
 	fmt.Println("  disable <uuid>     Disable single host")
 	fmt.Println("  enable <uuid>      Disable single host")
 	fmt.Println("  delete <uuid>      Delete single host")
+	fmt.Println("  audit <days>       Show hosts not seen in <days> days")
 	os.Exit(1)
 }
 
@@ -252,13 +303,17 @@ func main() {
 	case "list":
 		clientList()
 	case "info":
-		clientInfo(flag.Args()[1])
+		clientInfo(getArg(1, "netskelnotfound"), 0)
+	case "audit":
+		days := getArgInt(1, 7)
+		fmt.Printf("The following netskel hosts have not been seen in over %d days:\n\n", days)
+		clientInfo("", days)
 	case "disable":
-		disableClient(flag.Args()[1])
+		disableClient(getArg(1, "netskelnotfound"))
 	case "enable":
-		enableClient(flag.Args()[1])
+		enableClient(getArg(1, "netskelnotfound"))
 	case "delete":
-		deleteClient(flag.Args()[1])
+		deleteClient(getArg(1, "netskelnotfound"))
 	}
 
 	os.Exit(0)
