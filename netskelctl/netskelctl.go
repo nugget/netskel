@@ -123,6 +123,12 @@ func clientInfo(search string, days int) {
 	}
 	defer db.Close()
 
+	headerPrinted := false
+	header := fmt.Sprintf("Netskel hosts matching '%s':\n", search)
+	if days > 0 {
+		header = fmt.Sprintf("The following netskel hosts have not been seen in over %d days:\n", days)
+	}
+
 	widestK := 0
 
 	err = db.View(func(tx *bolt.Tx) error {
@@ -165,6 +171,10 @@ func clientInfo(search string, days int) {
 			}
 
 			if searchHit == true {
+				if !headerPrinted {
+					headerPrinted = true
+					fmt.Println(header)
+				}
 				fmt.Printf("[%s]\n", name)
 				for k, v := c.First(); k != nil; k, v = c.Next() {
 					v = transformKey(k, v)
@@ -306,7 +316,6 @@ func main() {
 		clientInfo(getArg(1, "netskelnotfound"), 0)
 	case "audit":
 		days := getArgInt(1, 7)
-		fmt.Printf("The following netskel hosts have not been seen in over %d days:\n\n", days)
 		clientInfo("", days)
 	case "disable":
 		disableClient(getArg(1, "netskelnotfound"))
