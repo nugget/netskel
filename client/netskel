@@ -335,7 +335,7 @@ case $1 in
     echo 'EOF' >> $NETSKEL_INSTALL_SCRIPT
     echo 'chmod 600 $HOME/.netskel/config' >> $NETSKEL_INSTALL_SCRIPT
 
-    echo "ssh -p $NETSKEL_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $NETSKEL_SERVER rawclient > ./bin/netskel" >> $NETSKEL_INSTALL_SCRIPT
+    echo "ssh -q -p $NETSKEL_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $NETSKEL_SERVER rawclient > ./bin/netskel" >> $NETSKEL_INSTALL_SCRIPT
     echo 'chmod 700 $HOME/bin/netskel' >> $NETSKEL_INSTALL_SCRIPT
 
     echo '$HOME/bin/netskel init && \' >> $NETSKEL_INSTALL_SCRIPT
@@ -344,7 +344,7 @@ case $1 in
 
     netskel_log "Pushing Pack:"
     echo "-- "
-    ssh -ATq -o ConnectTimeout=5 $2 /bin/sh < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
+    ssh -ATq -o ConnectTimeout=5 $2 < $NETSKEL_INSTALL_SCRIPT || netskel_log "Unable to connect to $2"
     echo "-- "
 
     netskel_cleanup
