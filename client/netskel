@@ -115,6 +115,7 @@ netskel_preflight() {
   netskel_find_executable ssh
   netskel_find_executable xxd
   netskel_find_executable bc
+  netskel_find_executable base64
 
   if [ -x $HOME/bin/pre-netskel ] ; then
     $HOME/bin/pre-netskel
@@ -147,26 +148,34 @@ netskel_cleanup() {
 netskel_fetch_file() {
   NETSKEL_TARGET=$NETSKEL_TMP/`basename $1`
 
-  $SSH sendfile db/$1 $NETSKEL_UUID $USERNAME $HOSTNAME > $NETSKEL_TMP/xxdfile
-
-  if [ "$NETSKEL_PATH_xxd" != "" ] ; then
-    xxd -p -r $NETSKEL_TMP/xxdfile > $NETSKEL_TARGET
+  if [ "$NETSKEL_PATH_base64" != "" ] ; then
+    $SSH sendbase64 db/$1 $NETSKEL_UUID $USERNAME $HOSTNAME > $NETSKEL_TMP/b64file
+    $NETSKEL_PATH_base64 -d $NETSKEL_TMP/b64file > $NETSKEL_TARGET
     RETVAL=$?
-    netskel_trace "Processed $NETSKEL_TARGET via xxd ($RETVAL)"
+    netskel_trace "Processed $NETSKEL_TARGET via base64 ($RETVAL)"
   else
-    if [ "$NETSKEL_PATH_bc" = "" ] ; then
-        echo 'This host needs either xxd or bc installed to be able to process'
-        echo 'the Netskel hexdump file transfers.  Sorry'
-        exit 1
+    $SSH sendfile db/$1 $NETSKEL_UUID $USERNAME $HOSTNAME > $NETSKEL_TMP/xxdfile
+
+    if [ "$NETSKEL_PATH_xxd" != "" ] ; then
+      xxd -p -r $NETSKEL_TMP/xxdfile > $NETSKEL_TARGET
+      RETVAL=$?
+      netskel_trace "Processed $NETSKEL_TARGET via xxd ($RETVAL)"
+    else
+      if [ "$NETSKEL_PATH_bc" = "" ] ; then
+          echo 'This host needs either xxd or bc installed to be able to process'
+          echo 'the Netskel hexdump file transfers.  Sorry'
+          exit 1
+      fi
+      # This mess will do the work of xxd (tested on FreeBSD only)
+      echo 'ibase=16; obase=8' > $NETSKEL_TMP/bcfile
+      cat $NETSKEL_TMP/xxdfile | sed -e 's/\(..\)/\1;/g' | tr 'a-z' 'A-Z' >> $NETSKEL_TMP/bcfile
+      cat $NETSKEL_TMP/bcfile | bc | sed -e 's/^/\\\\\\/g' | xargs -n 1 printf > $NETSKEL_TARGET
+      RETVAL=$?
+      netskel_trace "Processed $NETSKEL_TARGET via sed|tr|bc|sed|xargs|printf ($RETVAL)"
     fi
-    # This mess will do the work of xxd (tested on FreeBSD only)
-    echo 'ibase=16; obase=8' > $NETSKEL_TMP/bcfile
-    cat $NETSKEL_TMP/xxdfile | sed -e 's/\(..\)/\1;/g' | tr 'a-z' 'A-Z' >> $NETSKEL_TMP/bcfile
-    cat $NETSKEL_TMP/bcfile | bc | sed -e 's/^/\\\\\\/g' | xargs -n 1 printf > $NETSKEL_TARGET
-    RETVAL=$?
-    netskel_trace "Processed $NETSKEL_TARGET via sed|tr|bc|sed|xargs|printf ($RETVAL)"
   fi
-  rm -f $NETSKEL_TMP/xxdfile $NETSKEL_TMP/bcfile
+
+  rm -f $NETSKEL_TMP/xxdfile $NETSKEL_TMP/bcfile $NETSKEL_TMP/b64file
 
   return $RETVAL
 }

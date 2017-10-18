@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"io"
@@ -126,7 +127,32 @@ func fingerprint(filename string) ([]byte, error) {
 	return hash.Sum(result), nil
 }
 
-func hexdump(filename string) {
+func sendBase64(filename string) {
+	linelength := 76
+	count := 0
+
+	file, err := ioutil.ReadFile(filename)
+	if err != nil {
+		Warn("Error trying to base64 %v: %v", filename, err)
+		os.Exit(1)
+	}
+
+	str := base64.StdEncoding.EncodeToString(file)
+
+	for _, c := range str {
+		fmt.Printf("%c", c)
+		count += 1
+		if count >= linelength {
+			count = 0
+			fmt.Printf("\n")
+		}
+	}
+	fmt.Printf("\n")
+
+	Log("Sent base64  %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), USERNAME, HOSTNAME, CLIENT, UUID)
+}
+
+func sendHexdump(filename string) {
 	linelength := 30
 	count := 0
 
@@ -145,7 +171,7 @@ func hexdump(filename string) {
 		}
 	}
 	fmt.Printf("\n")
-	Log("Sent %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), USERNAME, HOSTNAME, CLIENT, UUID)
+	Log("Sent hexdump %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), USERNAME, HOSTNAME, CLIENT, UUID)
 }
 
 func sendRaw(filename string) {
@@ -297,7 +323,17 @@ func main() {
 			filename = "bin/netskel"
 		}
 
-		hexdump(filename)
+		sendHexdump(filename)
+
+	case "sendbase64":
+		filename := nsCommand[1]
+		UUID, USERNAME, HOSTNAME = parseUNH(nsCommand, 2, 3, 4)
+
+		if filename == "db/bin/netskel" {
+			filename = "bin/netskel"
+		}
+
+		sendBase64(filename)
 
 	case "rawclient":
 		filename := "bin/netskel"
