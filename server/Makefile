@@ -2,10 +2,14 @@ TARGET?=	/usr/local/netskel
 BINDIR?=	$(TARGET)/bin
 DBDIR?=		$(TARGET)/db
 
+GO?=		go
+
 all: netskel
 
 netskel:
-	go build
+	$(GO) get
+	$(GO) generate
+	$(GO) build
 
 install:
 	install -o netskel -g netskel -m 0750 -d $(TARGET)
