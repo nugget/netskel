@@ -150,7 +150,7 @@ netskel_fetch_file() {
 
   if [ "$NETSKEL_PATH_base64" != "" ] ; then
     $SSH sendbase64 db/$1 $NETSKEL_UUID $USERNAME $HOSTNAME > $NETSKEL_TMP/b64file
-    $NETSKEL_PATH_base64 -d $NETSKEL_TMP/b64file > $NETSKEL_TARGET
+    $NETSKEL_PATH_base64 --decode $NETSKEL_TMP/b64file > $NETSKEL_TARGET
     RETVAL=$?
     netskel_trace "Processed $NETSKEL_TARGET via base64 ($RETVAL)"
   else
