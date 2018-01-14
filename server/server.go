@@ -188,7 +188,7 @@ func addKey() {
 	servername, err := os.Hostname()
 	now := time.Now()
 	nowFmt := now.Format("Mon Jan _2 15:04:05 2006")
-	uuid := uuid.NewV4()
+	uuid, _ := uuid.NewV4()
 	cuuid := uuid.String()
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
