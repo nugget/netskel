@@ -43,6 +43,7 @@ func clientList() {
 		uuidList  []string
 		hostNames map[string]string
 		lastTimes map[string]string
+		Disableds map[string]string
 	)
 
 	hostNames = make(map[string]string)
@@ -50,6 +51,8 @@ func clientList() {
 
 	lastTimes = make(map[string]string)
 	lastWidth := 0
+
+	Disableds = make(map[string]string)
 
 	err = db.View(func(tx *bolt.Tx) error {
 
@@ -60,6 +63,11 @@ func clientList() {
 			c := b.Cursor()
 
 			isDisabled := b.Get([]byte("disabled"))
+			if showDisabled && isDisabled != nil {
+				Disableds[uuid] = "X"
+			} else {
+				Disableds[uuid] = ""
+			}
 			if isDisabled == nil || showDisabled {
 				uuidList = append(uuidList, uuid)
 
@@ -84,22 +92,26 @@ func clientList() {
 		})
 	})
 
-	fmt.Println(screenWidth)
+	// fmt.Println(screenWidth)
 
-	formatString := "%-36s  %-" + strconv.Itoa(hostWidth) + "s  %-" + strconv.Itoa(lastWidth) + "s\n"
+	formatString := "%-36s  %-" + strconv.Itoa(hostWidth) + "s  %-" + strconv.Itoa(lastWidth) + "s %1s"
 
-	fmt.Printf(formatString, "Client ID", "Hostname", "Last Seen")
+	formatString += "\n"
+
+	fmt.Printf(formatString, "Client ID", "Hostname", "Last Seen", "")
 	fmt.Printf(formatString,
 		strings.Repeat("=", 36),
 		strings.Repeat("=", hostWidth),
 		strings.Repeat("=", lastWidth),
+		"",
 	)
 
 	for _, uuid := range uuidList {
 		hostName := hostNames[uuid]
 		lastSeen := lastTimes[uuid]
+		disabled := Disableds[uuid]
 
-		fmt.Printf(formatString, uuid, hostName, lastSeen)
+		fmt.Printf(formatString, uuid, hostName, lastSeen, disabled)
 	}
 }
 
