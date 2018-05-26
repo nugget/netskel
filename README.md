@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/nugget/netskel.svg?branch=master)](https://travis-ci.org/nugget/netskel)
-[![GitHub release](https://img.shields.io/github/release/nugget/netskel.svg)](https://github.com/nugget/netskel/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/nugget/netskel)](https://goreportcard.com/report/github.com/nugget/netskel)
+[![codecov](https://codecov.io/gh/nugget/netskel/branch/master/graph/badge.svg)](https://codecov.io/gh/nugget/netskel)
+[![Release](https://img.shields.io/github/release/nugget/netskel.svg)](https://github.com/nugget/netskel/releases)
 
 ```
                                     _       _        _ 
