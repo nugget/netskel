@@ -1,9 +1,11 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestHarness(t *testing.T) {
-	if 1 == 2 {
-		t.Fatalf("Math stopped working")
-	}
+	assert.Equal(t, 1, 1, "Math stopped working.")
 }

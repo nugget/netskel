@@ -21,13 +21,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-var (
-	AUTHKEYSFILE string = os.Getenv("HOME") + "/.ssh/authorized_keys"
-	CLIENT       string = strings.Split(os.Getenv("SSH_CLIENT"), " ")[0]
-	UUID         string
-	USERNAME     string
-	HOSTNAME     string
-)
+// Location of ssh keys file to store newly-assigned client keys.
+var AUTHKEYSFILE = os.Getenv("HOME") + "/.ssh/authorized_keys"
+
+// Filename of the client database file.
+var CLIENTDB = "clients.db"
 
 func Debug(format string, a ...interface{}) {
 	syslog.Syslogf(syslog.LOG_DEBUG, format, a...)
@@ -39,6 +37,98 @@ func Log(format string, a ...interface{}) {
 
 func Warn(format string, a ...interface{}) {
 	syslog.Syslogf(syslog.LOG_WARNING, format, a...)
+}
+
+func Fatal(format string, a ...interface{}) {
+	syslog.Syslogf(syslog.LOG_CRIT, format, a...)
+	os.Exit(1)
+}
+
+// Session holds details about a remote client when serving a reauest.
+type session struct {
+	RemoteAddr string
+	UUID       string
+	Username   string
+	Hostname   string
+	Command    string
+}
+
+func newSession() session {
+	s := session{}
+	s.RemoteAddr = strings.Split(os.Getenv("SSH_CLIENT"), " ")[0]
+
+	return s
+}
+
+func (s *session) Parse(nsCommand []string) {
+	s.UUID = "nouuid"
+	s.Username = "user"
+	s.Hostname = "unknown"
+	s.Command = strings.ToLower(nsCommand[0])
+
+	var (
+		uuidPosition     int
+		usernamePosition int
+		hostnamePosition int
+	)
+
+	switch s.Command {
+	case "netskeldb", "addkey":
+		uuidPosition = 1
+		usernamePosition = 2
+		hostnamePosition = 3
+	case "sendfile", "sendbase64":
+		uuidPosition = 2
+		usernamePosition = 3
+		hostnamePosition = 4
+	default:
+		return
+	}
+
+	if len(nsCommand) > uuidPosition {
+		c, err := uuid.FromString(nsCommand[uuidPosition])
+		if err != nil {
+			Fatal("Unable to parse client-supplied UUID %v: %v", nsCommand[uuidPosition], err)
+		} else {
+			s.UUID = c.String()
+		}
+	}
+
+	if len(nsCommand) > usernamePosition {
+		s.Username = nsCommand[usernamePosition]
+	}
+
+	if len(nsCommand) > hostnamePosition {
+		s.Hostname = nsCommand[hostnamePosition]
+	}
+}
+
+func (s *session) NetskelDB() {
+	servername, _ := os.Hostname()
+	now := time.Now().Format("Mon, 2 Jan 2006 15:04:05 UTC")
+
+	fmt.Printf("#\n# .netskeldb for %s at %v\n#\n# Generated %v by %v\n#\n", s.UUID, s.RemoteAddr, now, servername)
+
+	// Force-inject the client itself
+	dbDirLine("bin")
+	dbFileLine("bin/netskel")
+
+	os.Chdir("db")
+	listDir(".")
+
+	Log("Sent netskeldb to %s@%s at %s (%s)", s.Username, s.Hostname, s.RemoteAddr, s.UUID)
+}
+
+func (s *session) Heartbeat() {
+	now := time.Now()
+	secs := strconv.Itoa(int(now.Unix()))
+
+	clientPut(s.UUID, "inet", s.RemoteAddr)
+	clientPut(s.UUID, "lastSeen", secs)
+	clientPut(s.UUID, "hostname", s.Hostname)
+	clientPut(s.UUID, "username", s.Username)
+
+	Debug("Stored heartbeat for %v", s.UUID)
 }
 
 func syntaxError() {
@@ -94,22 +184,6 @@ func listDir(dirname string) {
 	}
 }
 
-func netskelDB() {
-	servername, _ := os.Hostname()
-	now := time.Now().Format("Mon, 2 Jan 2006 15:04:05 UTC")
-
-	fmt.Printf("#\n# .netskeldb for %s at %v\n#\n# Generated %v by %v\n#\n", UUID, CLIENT, now, servername)
-
-	// Force-inject the client itself
-	dbDirLine("bin")
-	dbFileLine("bin/netskel")
-
-	os.Chdir("db")
-	listDir(".")
-
-	Log("Sent netskeldb to %s@%s at %s (%s)", USERNAME, HOSTNAME, CLIENT, UUID)
-}
-
 func fingerprint(filename string) ([]byte, error) {
 	var result []byte
 
@@ -127,7 +201,7 @@ func fingerprint(filename string) ([]byte, error) {
 	return hash.Sum(result), nil
 }
 
-func sendBase64(filename string) {
+func (s *session) SendBase64(filename string) {
 	linelength := 76
 	count := 0
 
@@ -149,10 +223,10 @@ func sendBase64(filename string) {
 	}
 	fmt.Printf("\n")
 
-	Log("Sent base64  %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), USERNAME, HOSTNAME, CLIENT, UUID)
+	Log("Sent base64 %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), s.Username, s.Hostname, s.RemoteAddr, s.UUID)
 }
 
-func sendHexdump(filename string) {
+func (s *session) SendHexdump(filename string) {
 	linelength := 30
 	count := 0
 
@@ -171,20 +245,21 @@ func sendHexdump(filename string) {
 		}
 	}
 	fmt.Printf("\n")
-	Log("Sent hexdump %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), USERNAME, HOSTNAME, CLIENT, UUID)
+	Log("Sent hexdump %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), s.Username, s.Hostname, s.RemoteAddr, s.UUID)
 }
 
-func sendRaw(filename string) {
+func (s *session) SendRaw(filename string) {
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
 		Warn("Error trying to sendRaw %v: %v", filename, err)
 		os.Exit(1)
 	}
 	fmt.Printf("%v", string(file))
+	Log("Sent raw %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), s.Username, s.Hostname, s.RemoteAddr, s.UUID)
 	os.Exit(0)
 }
 
-func addKey() {
+func (s *session) AddKey() {
 	servername, err := os.Hostname()
 	now := time.Now()
 	nowFmt := now.Format("Mon Jan _2 15:04:05 2006")
@@ -214,40 +289,28 @@ func addKey() {
 
 	defer f.Close()
 
-	if _, err = f.WriteString("restrict " + pubdata + " " + HOSTNAME + " " + cuuid + " " + nowFmt + "\n"); err != nil {
+	if _, err = f.WriteString("restrict " + pubdata + " " + s.Hostname + " " + cuuid + " " + nowFmt + "\n"); err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("#\n# Netskel private key generated by %v for %v (%v)\n#\n", servername, HOSTNAME, CLIENT)
+	fmt.Printf("#\n# Netskel private key generated by %v for %v (%v)\n#\n", servername, s.Hostname, s.RemoteAddr)
 	fmt.Printf("# CLIENT_UUID %s\n#\n", uuid)
 	fmt.Println(string(pemdata))
 
 	secs := strconv.Itoa(int(now.Unix()))
 
-	clientPut(cuuid, "hostname", HOSTNAME)
-	clientPut(cuuid, "originalHostname", HOSTNAME)
+	clientPut(cuuid, "hostname", s.Hostname)
+	clientPut(cuuid, "originalHostname", s.Hostname)
 	clientPut(cuuid, "created", secs)
 
-	Log("Added %d byte public key to %s for %s@%s (%v) uuid %s", len(pubdata), AUTHKEYSFILE, USERNAME, HOSTNAME, CLIENT, uuid)
+	Log("Added %d byte public key to %s for %s@%s (%v) uuid %s", len(pubdata), AUTHKEYSFILE, s.Username, s.Hostname, s.RemoteAddr, uuid)
 }
 
-func clientHeartbeat() {
-	now := time.Now()
-	secs := strconv.Itoa(int(now.Unix()))
-
-	clientPut(UUID, "inet", CLIENT)
-	clientPut(UUID, "lastSeen", secs)
-	clientPut(UUID, "hostname", HOSTNAME)
-	clientPut(UUID, "username", USERNAME)
-
-	Debug("Stored heartbeat for %v", UUID)
-}
-
-func clientPut(uuid, key, value string) {
-	db, err := bolt.Open("clients.db", 0660, &bolt.Options{Timeout: 2 * time.Second})
+// clientPut stores a key/value in the client database.
+func clientPut(uuid, key, value string) error {
+	db, err := bolt.Open(CLIENTDB, 0660, &bolt.Options{Timeout: 2 * time.Second})
 	if err != nil {
-		Warn("Unable to open client database: %v", err)
-		return
+		return fmt.Errorf("Can't open client db: %v", err)
 	}
 	defer db.Close()
 
@@ -262,53 +325,31 @@ func clientPut(uuid, key, value string) {
 	})
 
 	if berr != nil {
-		Warn("clientPut error %v", berr)
-	}
-}
-
-func parseUNH(nsCommand []string, uuidPosition, usernamePosition, hostnamePosition int) (string, string, string) {
-	cuuid := "nouuid"
-	username := "user"
-	hostname := "unknown"
-
-	if len(nsCommand) > uuidPosition {
-		c, err := uuid.FromString(nsCommand[uuidPosition])
-		if err != nil {
-			Warn("Unable to parse client-supplied UUID %v: %v", nsCommand[uuidPosition], err)
-		} else {
-			cuuid = c.String()
-		}
+		return fmt.Errorf("clientPut %v error: %v", uuid, err)
 	}
 
-	if len(nsCommand) > usernamePosition {
-		username = nsCommand[usernamePosition]
-	}
-
-	if len(nsCommand) > hostnamePosition {
-		hostname = nsCommand[hostnamePosition]
-	}
-
-	return cuuid, username, hostname
+	return nil
 }
 
 func main() {
 	syslog.Openlog("netskel-server", syslog.LOG_PID, syslog.LOG_USER)
+
+	s := newSession()
 
 	if os.Args[0] != "server" {
 		syntaxError()
 	}
 
 	nsCommand := strings.Split(os.Args[2], " ")
-	command := nsCommand[0]
+	s.Command = strings.ToLower(nsCommand[0])
 
-	Debug("Launched from %v with %v", CLIENT, nsCommand)
+	Debug("Launched from %v with %v", s.RemoteAddr, nsCommand)
 
-	switch command {
+	switch s.Command {
 	case "netskeldb":
-		UUID, USERNAME, HOSTNAME = parseUNH(nsCommand, 1, 2, 3)
-
-		clientHeartbeat()
-		netskelDB()
+		s.Parse(nsCommand)
+		s.Heartbeat()
+		s.NetskelDB()
 
 	case "md5":
 		filename := nsCommand[1]
@@ -316,32 +357,37 @@ func main() {
 		fmt.Println(hash)
 
 	case "sendfile":
+		s.Parse(nsCommand)
 		filename := nsCommand[1]
-		UUID, USERNAME, HOSTNAME = parseUNH(nsCommand, 2, 3, 4)
 
 		if filename == "db/bin/netskel" {
 			filename = "bin/netskel"
 		}
 
-		sendHexdump(filename)
+		s.SendHexdump(filename)
 
 	case "sendbase64":
+		s.Parse(nsCommand)
 		filename := nsCommand[1]
-		UUID, USERNAME, HOSTNAME = parseUNH(nsCommand, 2, 3, 4)
 
 		if filename == "db/bin/netskel" {
 			filename = "bin/netskel"
 		}
 
-		sendBase64(filename)
+		s.SendBase64(filename)
 
 	case "rawclient":
 		filename := "bin/netskel"
-		sendRaw(filename)
+		s.SendRaw(filename)
 
 	case "addkey":
-		_, USERNAME, HOSTNAME = parseUNH(nsCommand, 1, 2, 3)
-		addKey()
+		s.Parse(nsCommand)
+		s.AddKey()
+
+	case "uname":
+		s.Parse(nsCommand)
+		uname := nsCommand[4]
+		clientPut(s.UUID, "uname", uname)
 
 	default:
 		syntaxError()
