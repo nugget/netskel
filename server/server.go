@@ -315,6 +315,7 @@ func fingerprint(filename string) ([]byte, error) {
 func clientPut(uuid, key, value string) error {
 	db, err := bolt.Open(CLIENTDB, 0660, &bolt.Options{Timeout: 2 * time.Second})
 	if err != nil {
+		Warn("clientPut %v error: %v", uuid, err)
 		return fmt.Errorf("Can't open client db: %v", err)
 	}
 	defer db.Close()
@@ -330,6 +331,7 @@ func clientPut(uuid, key, value string) error {
 	})
 
 	if berr != nil {
+		Warn("clientPut %v error: %v", uuid, err)
 		return fmt.Errorf("clientPut %v error: %v", uuid, err)
 	}
 
@@ -358,7 +360,10 @@ func main() {
 
 	case "md5":
 		filename := nsCommand[1]
-		hash, _ := fingerprint(filename)
+		hash, err := fingerprint(filename)
+		if err != nil {
+			Fatal("Unable to determine fingerprint for %s: %v", filename, err)
+		}
 		fmt.Println(hash)
 
 	case "sendfile":
