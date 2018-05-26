@@ -13,12 +13,16 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-var (
-	BASEDIR      string = "/usr/local/netskel"
-	verbose      bool
-	showDisabled bool
-)
+// BASEDIR is the location of all the netskel files.
+var BASEDIR = "/usr/local/netskel"
 
+// verbose controls the verbosity of program output.
+var verbose bool
+
+// showDisabled controls whether or not we hide disabled hosts.
+var showDisabled bool
+
+// Debug logs to syslog at the debug level.
 func Debug(format string, a ...interface{}) {
 	if verbose {
 		fmt.Printf(format+"\n", a...)
@@ -201,11 +205,11 @@ func clientInfo(search string, days int) {
 	})
 }
 
-func clientPut(uuid, key, value string) {
+func clientPut(uuid, key, value string) (err error) {
 	db, err := bolt.Open(BASEDIR+"/clients.db", 0660, nil)
 	if err != nil {
 		fmt.Printf("Unable to open client database: %v\n", err)
-		return
+		return err
 	}
 	defer db.Close()
 
@@ -217,18 +221,20 @@ func clientPut(uuid, key, value string) {
 
 		if value != "" {
 			oldVal := string(b.Get([]byte(key)))
-			perr := b.Put([]byte(key), []byte(value))
+			err = b.Put([]byte(key), []byte(value))
 			Debug("%s: %v -> %v", key, oldVal, value)
-			return perr
 		} else {
-			perr := b.Delete([]byte(key))
-			return perr
+			err = b.Delete([]byte(key))
 		}
+
+		return err
 	})
 
 	if berr != nil {
 		fmt.Printf("%v\n", berr)
 	}
+
+	return berr
 }
 
 func disableClient(uuid string) error {
@@ -273,9 +279,9 @@ func getArg(pos int, def string) string {
 
 	if val == "" {
 		return def
-	} else {
-		return val
 	}
+
+	return val
 }
 
 func getArgInt(pos int, def int) int {
@@ -283,16 +289,16 @@ func getArgInt(pos int, def int) int {
 
 	if strArg == "" {
 		return def
-	} else {
-		i, err := strconv.Atoi(strArg)
-		if err != nil {
-			return def
-		} else {
-			return i
-		}
 	}
+
+	i, err := strconv.Atoi(strArg)
+	if err != nil {
+		return def
+	}
+	return i
 }
 
+// Usage prints helpful information on how to use the command.
 func Usage() {
 	fmt.Printf("usage: netskelctl [flags] <command>\n\n")
 	fmt.Println("Flags:")
