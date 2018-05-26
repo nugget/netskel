@@ -188,23 +188,6 @@ func listDir(dirname string) {
 	}
 }
 
-func fingerprint(filename string) ([]byte, error) {
-	var result []byte
-
-	file, err := os.Open(filename)
-	if err != nil {
-		return result, err
-	}
-	defer file.Close()
-
-	hash := md5.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return result, err
-	}
-
-	return hash.Sum(result), nil
-}
-
 func (s *session) SendBase64(filename string) {
 	linelength := 76
 	count := 0
@@ -308,6 +291,24 @@ func (s *session) AddKey() {
 	clientPut(cuuid, "created", secs)
 
 	Log("Added %d byte public key to %s for %s@%s (%v) uuid %s", len(pubdata), AUTHKEYSFILE, s.Username, s.Hostname, s.RemoteAddr, uuid)
+}
+
+// fingerprint calculates the MD5 fingerprint of a file.
+func fingerprint(filename string) ([]byte, error) {
+	var result []byte
+
+	file, err := os.Open(filename)
+	if err != nil {
+		return result, err
+	}
+	defer file.Close()
+
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return result, err
+	}
+
+	return hash.Sum(result), nil
 }
 
 // clientPut stores a key/value in the client database.
