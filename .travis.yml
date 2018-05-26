@@ -4,9 +4,6 @@ go:
   - "1.10.x"
   - master
 
-before_install:
-  - go get -t -v ./...
-
 script:
   - go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 

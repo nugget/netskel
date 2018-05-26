@@ -294,7 +294,7 @@ func getArgInt(pos int, def int) int {
 }
 
 func Usage() {
-	fmt.Println("usage: netskelctl [flags] <command>\n")
+	fmt.Printf("usage: netskelctl [flags] <command>\n\n")
 	fmt.Println("Flags:")
 	flag.PrintDefaults()
 	fmt.Println("\nCommands:")
