@@ -21,24 +21,28 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// Location of ssh keys file to store newly-assigned client keys.
+// AUTHKEYSFILE stores the location of the ssh keys file to store newly-assigned client keys.
 var AUTHKEYSFILE = os.Getenv("HOME") + "/.ssh/authorized_keys"
 
-// Filename of the client database file.
+// CLIENTDB is the filename of the client database file.
 var CLIENTDB = "clients.db"
 
+// Debug logs a debug message to syslog.
 func Debug(format string, a ...interface{}) {
 	syslog.Syslogf(syslog.LOG_DEBUG, format, a...)
 }
 
+// Log logs a normal message to syslog.
 func Log(format string, a ...interface{}) {
 	syslog.Syslogf(syslog.LOG_NOTICE, format, a...)
 }
 
+// Warn logs a warning to syslog.
 func Warn(format string, a ...interface{}) {
 	syslog.Syslogf(syslog.LOG_WARNING, format, a...)
 }
 
+// Fatal aborts all services.
 func Fatal(format string, a ...interface{}) {
 	syslog.Syslogf(syslog.LOG_CRIT, format, a...)
 	os.Exit(1)
@@ -215,7 +219,7 @@ func (s *session) SendBase64(filename string) {
 
 	for _, c := range str {
 		fmt.Printf("%c", c)
-		count += 1
+		count++
 		if count >= linelength {
 			count = 0
 			fmt.Printf("\n")
@@ -238,7 +242,7 @@ func (s *session) SendHexdump(filename string) {
 
 	for _, c := range file {
 		fmt.Printf("%02x", c)
-		count += 1
+		count++
 		if count >= linelength {
 			count = 0
 			fmt.Printf("\n")
