@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
+	"github.com/boltdb/bolt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -92,4 +94,45 @@ func TestDB(t *testing.T) {
 
 	assert.Contains(t, stdoutBuffer, "server.go", "Netskeldb was not generated correctly")
 	assert.Contains(t, stdoutBuffer, "bin/", "Netskeldb was not generated correctly")
+}
+
+func TestHeartbeat(t *testing.T) {
+	clearStdout()
+
+	s := newSession()
+	s.UUID = "6ec558e1-5f06-4083-9070-206819b53916"
+	s.Hostname = "host.example.org"
+	s.Username = "luser"
+
+	s.Heartbeat()
+
+	assert.Equal(t, s.Hostname, getKeyValue(s.UUID, "hostname"))
+	assert.Equal(t, s.Username, getKeyValue(s.UUID, "username"))
+}
+
+func getKeyValue(uuid, key string) (retval string) {
+	db, err := bolt.Open(CLIENTDB, 0660, &bolt.Options{})
+	if err != nil {
+		return fmt.Sprintf("%v", err)
+	}
+	defer db.Close()
+
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(uuid))
+		v := b.Get([]byte(key))
+		retval = string(v)
+		return nil
+	})
+
+	return retval
+}
+
+func TestMain(m *testing.M) {
+	CLIENTDB = "testing.db"
+
+	code := m.Run()
+
+	os.Remove(CLIENTDB)
+
+	os.Exit(code)
 }
