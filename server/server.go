@@ -77,7 +77,10 @@ func (s *session) Parse(nsCommand []string) {
 	)
 
 	switch s.Command {
-	case "netskeldb", "addkey":
+	case "addkey":
+		usernamePosition = 1
+		hostnamePosition = 2
+	case "netskeldb":
 		uuidPosition = 1
 		usernamePosition = 2
 		hostnamePosition = 3
@@ -89,7 +92,7 @@ func (s *session) Parse(nsCommand []string) {
 		return
 	}
 
-	if len(nsCommand) > uuidPosition {
+	if uuidPosition > 0 && len(nsCommand) > uuidPosition {
 		c, err := uuid.FromString(nsCommand[uuidPosition])
 		if err != nil {
 			Fatal("Unable to parse client-supplied UUID %v: %v", nsCommand[uuidPosition], err)
@@ -98,11 +101,11 @@ func (s *session) Parse(nsCommand []string) {
 		}
 	}
 
-	if len(nsCommand) > usernamePosition {
+	if usernamePosition > 0 && len(nsCommand) > usernamePosition {
 		s.Username = nsCommand[usernamePosition]
 	}
 
-	if len(nsCommand) > hostnamePosition {
+	if hostnamePosition > 0 && len(nsCommand) > hostnamePosition {
 		s.Hostname = nsCommand[hostnamePosition]
 	}
 }
