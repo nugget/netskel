@@ -184,7 +184,7 @@ netskel_sync_dir() {
   fullpath="$NETSKEL_ROOT/$1"
   pathleft="$NETSKEL_ROOT"
 
-  NETSKEL_TARGET_MODE=`grep "$1\W" $NETSKEL_DBFILE | head -1 | cut -f 2`
+  NETSKEL_TARGET_MODE=`grep "$1[[:space:]]" $NETSKEL_DBFILE | head -1 | cut -f 2`
 
   for pathpart in `echo $1 | sed 's/\// /g'`; do
     if [ ! -d "$pathleft/$pathpart" ] ; then
@@ -203,9 +203,9 @@ netskel_sync_file() {
   NETSKEL_NEED_SYNC=0
 
   if [ -f $fullpath ] ; then
-    NETSKEL_TARGET_SIZE=`grep "$1\W" $NETSKEL_DBFILE | cut -f 4`
-    NETSKEL_TARGET_MD5=`grep "$1\W" $NETSKEL_DBFILE | cut -f 5`
-    NETSKEL_TARGET_MODE=`grep "$1\W" $NETSKEL_DBFILE | cut -f 2`
+    NETSKEL_TARGET_SIZE=`grep "$1[[:space:]]" $NETSKEL_DBFILE | cut -f 4`
+    NETSKEL_TARGET_MD5=`grep "$1[[:space:]]" $NETSKEL_DBFILE | cut -f 5`
+    NETSKEL_TARGET_MODE=`grep "$1[[:space:]]" $NETSKEL_DBFILE | cut -f 2`
 
     NETSKEL_FILE_SIZE=$NETSKEL_TARGET_SIZE
     if [ "$NETSKEL_PATH_stat" = "" ] ; then
