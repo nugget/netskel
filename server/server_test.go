@@ -1,11 +1,33 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	Send = fakeSend
+	Sendln = fakeSendln
+}
+
+func fakeSend(format string, a ...interface{}) (int, error) {
+	stdoutBuffer += fmt.Sprintf(format, a...)
+	return 0, nil
+}
+
+func fakeSendln(a ...interface{}) (int, error) {
+	stdoutBuffer += fmt.Sprintln(a...)
+	return 0, nil
+}
+
+var stdoutBuffer string
+
+func clearStdout() {
+	stdoutBuffer = ""
+}
 
 func TestHarness(t *testing.T) {
 	assert.Equal(t, 1, 1, "Math stopped working.")
@@ -60,4 +82,14 @@ func TestParsing(t *testing.T) {
 			assert.Equal(t, tt.out, s, "The session structure was not Parse()d correctly.")
 		})
 	}
+}
+
+func TestDB(t *testing.T) {
+	clearStdout()
+
+	s := newSession()
+	s.NetskelDB()
+
+	assert.Contains(t, stdoutBuffer, "server.go", "Netskeldb was not generated correctly")
+	assert.Contains(t, stdoutBuffer, "bin/", "Netskeldb was not generated correctly")
 }
