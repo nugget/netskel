@@ -344,6 +344,25 @@ func clientPut(uuid, key, value string) error {
 	return nil
 }
 
+// clientGet retrieves the value of a key in the client database.
+func clientGet(uuid, key string) (retval string) {
+	db, err := bolt.Open(CLIENTDB, 0660, &bolt.Options{})
+	if err != nil {
+		Warn("Unable to open client database: %v\n", err)
+		return ""
+	}
+	defer db.Close()
+
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(uuid))
+		v := b.Get([]byte(key))
+		retval = string(v)
+		return nil
+	})
+
+	return retval
+}
+
 func main() {
 	syslog.Openlog("netskel-server", syslog.LOG_PID, syslog.LOG_USER)
 

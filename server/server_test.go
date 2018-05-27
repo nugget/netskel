@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/boltdb/bolt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -106,25 +105,8 @@ func TestHeartbeat(t *testing.T) {
 
 	s.Heartbeat()
 
-	assert.Equal(t, s.Hostname, getKeyValue(s.UUID, "hostname"))
-	assert.Equal(t, s.Username, getKeyValue(s.UUID, "username"))
-}
-
-func getKeyValue(uuid, key string) (retval string) {
-	db, err := bolt.Open(CLIENTDB, 0660, &bolt.Options{})
-	if err != nil {
-		return fmt.Sprintf("%v", err)
-	}
-	defer db.Close()
-
-	db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(uuid))
-		v := b.Get([]byte(key))
-		retval = string(v)
-		return nil
-	})
-
-	return retval
+	assert.Equal(t, s.Hostname, clientGet(s.UUID, "hostname"))
+	assert.Equal(t, s.Username, clientGet(s.UUID, "username"))
 }
 
 func TestMain(m *testing.M) {
