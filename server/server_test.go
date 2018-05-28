@@ -75,6 +75,22 @@ var parseTests = []struct {
 			Username: "luser",
 			Hostname: "host.example.com"},
 	},
+	{
+		"unrecognized command string will fail to parse",
+		session{
+			Command:  "unrecognized",
+			UUID:     "nouuid",
+			Username: "user",
+			Hostname: "unknown"},
+	},
+	{
+		"netskeldb this-is-a-malformed-uuid luser host.example.com",
+		session{
+			Command:  "netskeldb",
+			UUID:     "nouuid",
+			Username: "luser",
+			Hostname: "host.example.com"},
+	},
 }
 
 func TestParsing(t *testing.T) {
@@ -94,7 +110,7 @@ func TestParsing(t *testing.T) {
 	}
 }
 
-func TestDB(t *testing.T) {
+func TestNetskelDB(t *testing.T) {
 	clearStdout()
 	s := newSession()
 
@@ -102,6 +118,21 @@ func TestDB(t *testing.T) {
 
 	assert.Contains(t, stdoutBuffer, "server.go", "Netskeldb was not generated correctly")
 	assert.Contains(t, stdoutBuffer, "bin/", "Netskeldb was not generated correctly")
+}
+
+func TestListDirParent(t *testing.T) {
+	// This will hit the ".git" special handling and directory handling code
+	clearStdout()
+	err := listDir("..")
+	assert.Nil(t, err)
+	assert.Contains(t, stdoutBuffer, "700", "I expected at least one directory")
+	assert.NotContains(t, stdoutBuffer, ".git/", "The git directory should be ignored")
+}
+
+func TestListDirNotFound(t *testing.T) {
+	clearStdout()
+	err := listDir("/this/directory/does/not/exist")
+	assert.True(t, os.IsNotExist(err))
 }
 
 func TestHeartbeat(t *testing.T) {
@@ -195,12 +226,6 @@ func TestAddKey(t *testing.T) {
 	assert.Equal(t, s.Hostname, matches[2])
 	assert.Equal(t, s.Hostname, clientGet(s.UUID, "hostname"))
 	assert.Equal(t, s.Hostname, clientGet(s.UUID, "originalHostname"))
-}
-
-func TestListDirNotFound(t *testing.T) {
-	clearStdout()
-	err := listDir("/this/directory/does/not/exist")
-	assert.True(t, os.IsNotExist(err))
 }
 
 func TestMain(m *testing.M) {

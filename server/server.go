@@ -98,7 +98,7 @@ func (s *session) Parse(nsCommand []string) {
 	if uuidPosition > 0 && len(nsCommand) > uuidPosition {
 		c, err := uuid.FromString(nsCommand[uuidPosition])
 		if err != nil {
-			Fatal("Unable to parse client-supplied UUID %v: %v", nsCommand[uuidPosition], err)
+			Warn("Unable to parse client-supplied UUID %v: %v", nsCommand[uuidPosition], err)
 		} else {
 			s.UUID = c.String()
 		}
