@@ -179,7 +179,7 @@ func TestMain(m *testing.M) {
 
 	os.Remove(CLIENTDB)
 	os.Remove(DATAFILE)
-	// os.Remove(AUTHKEYSFILE)
+	os.Remove(AUTHKEYSFILE)
 
 	os.Exit(code)
 }
