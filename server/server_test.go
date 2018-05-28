@@ -84,6 +84,10 @@ func TestParsing(t *testing.T) {
 			s := newSession()
 			nsCommand := strings.Split(tt.in, " ")
 			s.Parse(nsCommand)
+			// RemoteAddr may have been legitimately populated if you are
+			// running go test on a remote host via ssh.  We remove it here
+			// so that we know what to compare for with the assertions.
+			s.RemoteAddr = ""
 
 			assert.Equal(t, tt.out, s, "The session structure was not Parse()d correctly.")
 		})
