@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -24,7 +25,10 @@ func fakeSendln(a ...interface{}) (int, error) {
 	return 0, nil
 }
 
-var stdoutBuffer string
+var (
+	stdoutBuffer string
+	DATAFILE     string
+)
 
 func clearStdout() {
 	stdoutBuffer = ""
@@ -87,8 +91,8 @@ func TestParsing(t *testing.T) {
 
 func TestDB(t *testing.T) {
 	clearStdout()
-
 	s := newSession()
+
 	s.NetskelDB()
 
 	assert.Contains(t, stdoutBuffer, "server.go", "Netskeldb was not generated correctly")
@@ -97,8 +101,8 @@ func TestDB(t *testing.T) {
 
 func TestHeartbeat(t *testing.T) {
 	clearStdout()
-
 	s := newSession()
+
 	s.UUID = "6ec558e1-5f06-4083-9070-206819b53916"
 	s.Hostname = "host.example.org"
 	s.Username = "luser"
@@ -109,12 +113,45 @@ func TestHeartbeat(t *testing.T) {
 	assert.Equal(t, s.Username, clientGet(s.UUID, "username"))
 }
 
+func TestSendRaw(t *testing.T) {
+	clearStdout()
+	s := newSession()
+
+	s.SendRaw(DATAFILE)
+	assert.Equal(t, "Hello, world!\n", stdoutBuffer, "File was not sent correctly")
+}
+
+func TestSendHexdump(t *testing.T) {
+	clearStdout()
+	s := newSession()
+
+	s.SendHexdump(DATAFILE)
+	assert.Equal(t, "48656c6c6f2c20776f726c64210a\n", stdoutBuffer, "File was not sent correctly")
+}
+
+func TestSendBase64(t *testing.T) {
+	clearStdout()
+	s := newSession()
+
+	s.SendBase64(DATAFILE)
+	assert.Equal(t, "SGVsbG8sIHdvcmxkIQo=\n", stdoutBuffer, "File was not sent correctly")
+}
+
+func createSampleFile(filename string) {
+	data := []byte("Hello, world!\n")
+	ioutil.WriteFile(filename, data, 0644)
+}
+
 func TestMain(m *testing.M) {
 	CLIENTDB = "testing.db"
+	DATAFILE = "sample.dat"
+
+	createSampleFile(DATAFILE)
 
 	code := m.Run()
 
 	os.Remove(CLIENTDB)
+	os.Remove(DATAFILE)
 
 	os.Exit(code)
 }

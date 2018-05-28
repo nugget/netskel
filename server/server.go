@@ -249,7 +249,6 @@ func (s *session) SendRaw(filename string) {
 	}
 	Send("%v", string(file))
 	Log("Sent raw %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), s.Username, s.Hostname, s.RemoteAddr, s.UUID)
-	os.Exit(0)
 }
 
 func (s *session) AddKey() {
