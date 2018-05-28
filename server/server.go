@@ -124,9 +124,12 @@ func (s *session) NetskelDB() {
 	dbFileLine("bin/netskel")
 
 	os.Chdir("db")
-	listDir(".")
-
-	Log("Sent netskeldb to %s@%s at %s (%s)", s.Username, s.Hostname, s.RemoteAddr, s.UUID)
+	err := listDir(".")
+	if err != nil {
+		Warn("Error listing directory: %v", err)
+	} else {
+		Log("Sent netskeldb to %s@%s at %s (%s)", s.Username, s.Hostname, s.RemoteAddr, s.UUID)
+	}
 }
 
 func (s *session) Heartbeat() {
@@ -170,11 +173,11 @@ func dbDirLine(directory string) {
 	Send("%s/\t%d\t*\n", trimmed, 700)
 }
 
-func listDir(dirname string) {
+func listDir(dirname string) error {
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
 		Warn("Error reading directory %v", dirname)
-		return
+		return err
 	}
 
 	for _, file := range files {
@@ -187,11 +190,16 @@ func listDir(dirname string) {
 		switch mode := file.Mode(); {
 		case mode.IsDir():
 			dbDirLine(fullname)
-			listDir(fullname)
+			err := listDir(fullname)
+			if err != nil {
+				return err
+			}
 		case mode.IsRegular():
 			dbFileLine(fullname)
 		}
 	}
+
+	return nil
 }
 
 func (s *session) SendBase64(filename string) {

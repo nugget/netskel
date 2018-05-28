@@ -168,7 +168,12 @@ func TestAddKey(t *testing.T) {
 	assert.Equal(t, s.Hostname, matches[2])
 	assert.Equal(t, s.Hostname, clientGet(s.UUID, "hostname"))
 	assert.Equal(t, s.Hostname, clientGet(s.UUID, "originalHostname"))
+}
 
+func TestListDirBad(t *testing.T) {
+	clearStdout()
+	err := listDir("/this/directory/does/not/exist")
+	assert.True(t, os.IsNotExist(err))
 }
 
 func TestMain(m *testing.M) {
