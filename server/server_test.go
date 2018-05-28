@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -137,21 +138,48 @@ func TestSendBase64(t *testing.T) {
 	assert.Equal(t, "SGVsbG8sIHdvcmxkIQo=\n", stdoutBuffer, "File was not sent correctly")
 }
 
-func createSampleFile(filename string) {
-	data := []byte("Hello, world!\n")
-	ioutil.WriteFile(filename, data, 0644)
+func TestAddKey(t *testing.T) {
+	clearStdout()
+	s := newSession()
+
+	s.Hostname = "host.example.org"
+	s.Username = "luser"
+
+	err := s.AddKey()
+	if err != nil {
+		t.Log(err)
+		t.Error("AddKey error")
+	}
+
+	keyfile, err := ioutil.ReadFile(AUTHKEYSFILE)
+	if err != nil {
+		t.Error("Unable to read AUTHKEYSFILE")
+	}
+
+	r := regexp.MustCompile(`restrict ssh-rsa ([^ ]+) ([^ ]+) ([^ ]+) `)
+	matches := r.FindStringSubmatch(string(keyfile))
+	s.UUID = matches[3]
+
+	assert.Contains(t, stdoutBuffer, "Netskel private key generated", "key not transmitted properly")
+	assert.Equal(t, s.Hostname, matches[2])
+	assert.Equal(t, s.Hostname, clientGet(s.UUID, "hostname"))
+	assert.Equal(t, s.Hostname, clientGet(s.UUID, "originalHostname"))
+
 }
 
 func TestMain(m *testing.M) {
 	CLIENTDB = "testing.db"
 	DATAFILE = "sample.dat"
+	AUTHKEYSFILE = "testing_keys"
 
-	createSampleFile(DATAFILE)
+	ioutil.WriteFile(DATAFILE, []byte("Hello, world!\n"), 0644)
+	ioutil.WriteFile(AUTHKEYSFILE, []byte{}, 0644)
 
 	code := m.Run()
 
 	os.Remove(CLIENTDB)
 	os.Remove(DATAFILE)
+	// os.Remove(AUTHKEYSFILE)
 
 	os.Exit(code)
 }
