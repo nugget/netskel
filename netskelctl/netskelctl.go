@@ -208,7 +208,7 @@ func clientInfo(search string, days int) {
 func clientPut(uuid, key, value string) (err error) {
 	db, err := bolt.Open(BASEDIR+"/clients.db", 0660, nil)
 	if err != nil {
-		fmt.Printf("Unable to open client database: %v\n", err)
+		Warn("Unable to open client database: %v\n", err)
 		return err
 	}
 	defer db.Close()
