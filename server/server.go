@@ -202,14 +202,13 @@ func listDir(dirname string) error {
 	return nil
 }
 
-func (s *session) SendBase64(filename string) {
+func (s *session) SendBase64(filename string) error {
 	linelength := 76
 	count := 0
 
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		Warn("Error trying to base64 %v: %v", filename, err)
-		os.Exit(1)
+		return err
 	}
 
 	str := base64.StdEncoding.EncodeToString(file)
@@ -225,16 +224,17 @@ func (s *session) SendBase64(filename string) {
 	Send("\n")
 
 	Log("Sent base64 %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), s.Username, s.Hostname, s.RemoteAddr, s.UUID)
+
+	return nil
 }
 
-func (s *session) SendHexdump(filename string) {
+func (s *session) SendHexdump(filename string) error {
 	linelength := 30
 	count := 0
 
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		Warn("Error trying to hexdump %v: %v", filename, err)
-		os.Exit(1)
+		return err
 	}
 
 	for _, c := range file {
@@ -247,16 +247,19 @@ func (s *session) SendHexdump(filename string) {
 	}
 	Send("\n")
 	Log("Sent hexdump %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), s.Username, s.Hostname, s.RemoteAddr, s.UUID)
+
+	return nil
 }
 
-func (s *session) SendRaw(filename string) {
+func (s *session) SendRaw(filename string) error {
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		Warn("Error trying to sendRaw %v: %v", filename, err)
-		os.Exit(1)
+		return err
 	}
 	Send("%v", string(file))
 	Log("Sent raw %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), s.Username, s.Hostname, s.RemoteAddr, s.UUID)
+
+	return nil
 }
 
 func (s *session) AddKey() error {
@@ -408,7 +411,10 @@ func main() {
 			filename = "bin/netskel"
 		}
 
-		s.SendHexdump(filename)
+		err := s.SendHexdump(filename)
+		if err != nil {
+			Warn("Unable to SendHexDump %s: %v", filename, err)
+		}
 
 	case "sendbase64":
 		s.Parse(nsCommand)
@@ -418,11 +424,17 @@ func main() {
 			filename = "bin/netskel"
 		}
 
-		s.SendBase64(filename)
+		err := s.SendBase64(filename)
+		if err != nil {
+			Warn("Unable to SendBase64 %s: %v", filename, err)
+		}
 
 	case "rawclient":
 		filename := "bin/netskel"
-		s.SendRaw(filename)
+		err := s.SendRaw(filename)
+		if err != nil {
+			Warn("Unable to SendRaw %s: %v", filename, err)
+		}
 
 	case "addkey":
 		s.Parse(nsCommand)

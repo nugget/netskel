@@ -122,24 +122,51 @@ func TestSendRaw(t *testing.T) {
 	clearStdout()
 	s := newSession()
 
-	s.SendRaw(DATAFILE)
+	err := s.SendRaw(DATAFILE)
+	assert.Nil(t, err, "SendRaw exited with an error")
 	assert.Equal(t, "Hello, world!\n", stdoutBuffer, "File was not sent correctly")
+}
+
+func TestSendRawNotFound(t *testing.T) {
+	clearStdout()
+	s := newSession()
+
+	err := s.SendRaw("/this/file/does/not/exist")
+	assert.True(t, os.IsNotExist(err), "SendRaw somehow sent a non-existent file.")
 }
 
 func TestSendHexdump(t *testing.T) {
 	clearStdout()
 	s := newSession()
 
-	s.SendHexdump(DATAFILE)
+	err := s.SendHexdump(DATAFILE)
+	assert.Nil(t, err, "SendHexdump exited with an error")
 	assert.Equal(t, "48656c6c6f2c20776f726c64210a\n", stdoutBuffer, "File was not sent correctly")
+}
+
+func TestSendHexdumpNotFound(t *testing.T) {
+	clearStdout()
+	s := newSession()
+
+	err := s.SendHexdump("/this/file/does/not/exist")
+	assert.True(t, os.IsNotExist(err), "SendHexdump somehow sent a non-existent file.")
 }
 
 func TestSendBase64(t *testing.T) {
 	clearStdout()
 	s := newSession()
 
-	s.SendBase64(DATAFILE)
-	assert.Equal(t, "SGVsbG8sIHdvcmxkIQo=\n", stdoutBuffer, "File was not sent correctly")
+	err := s.SendBase64(DATAFILE)
+	assert.Nil(t, err, "SendBase64 exited with an error")
+	assert.Equal(t, "SGVsbG8sIHdvcmxkIQo=\n", stdoutBuffer, "File was not sent correctly.")
+}
+
+func TestSendBase64NotFound(t *testing.T) {
+	clearStdout()
+	s := newSession()
+
+	err := s.SendBase64("/this/file/does/not/exist")
+	assert.True(t, os.IsNotExist(err), "SendBase64 somehow sent a non-existent file.")
 }
 
 func TestAddKey(t *testing.T) {
@@ -170,7 +197,7 @@ func TestAddKey(t *testing.T) {
 	assert.Equal(t, s.Hostname, clientGet(s.UUID, "originalHostname"))
 }
 
-func TestListDirBad(t *testing.T) {
+func TestListDirNotFound(t *testing.T) {
 	clearStdout()
 	err := listDir("/this/directory/does/not/exist")
 	assert.True(t, os.IsNotExist(err))
