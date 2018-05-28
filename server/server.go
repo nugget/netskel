@@ -251,7 +251,7 @@ func (s *session) SendRaw(filename string) {
 	Log("Sent raw %s (%d bytes) to %s@%s at %s (%s)", filename, len(file), s.Username, s.Hostname, s.RemoteAddr, s.UUID)
 }
 
-func (s *session) AddKey() {
+func (s *session) AddKey() error {
 	servername, err := os.Hostname()
 	now := time.Now()
 	nowFmt := now.Format("Mon Jan _2 15:04:05 2006")
@@ -260,23 +260,20 @@ func (s *session) AddKey() {
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		Warn("Error generating private key: %v", err)
-		os.Exit(1)
+		return err
 	}
 	privateKeyPEM := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)}
 	pemdata := pem.EncodeToMemory(privateKeyPEM)
 
 	pub, err := ssh.NewPublicKey(&privateKey.PublicKey)
 	if err != nil {
-		Warn("Error constructing public key: %v", err)
-		os.Exit(1)
+		return err
 	}
 	pubdata := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(pub)))
 
 	f, err := os.OpenFile(AUTHKEYSFILE, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
-		Warn("Error opening %s for writing: %v", AUTHKEYSFILE, err)
-		os.Exit(1)
+		return err
 	}
 
 	defer f.Close()
@@ -296,6 +293,8 @@ func (s *session) AddKey() {
 	clientPut(cuuid, "created", secs)
 
 	Log("Added %d byte public key to %s for %s@%s (%v) uuid %s", len(pubdata), AUTHKEYSFILE, s.Username, s.Hostname, s.RemoteAddr, uuid)
+
+	return nil
 }
 
 // fingerprint calculates the MD5 fingerprint of a file.
@@ -352,8 +351,11 @@ func clientGet(uuid, key string) (retval string) {
 	}
 	defer db.Close()
 
-	db.View(func(tx *bolt.Tx) error {
+	err = db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(uuid))
+		if b == nil {
+			return nil
+		}
 		v := b.Get([]byte(key))
 		retval = string(v)
 		return nil
@@ -416,7 +418,11 @@ func main() {
 
 	case "addkey":
 		s.Parse(nsCommand)
-		s.AddKey()
+		err := s.AddKey()
+		if err != nil {
+			Warn("Error in AddKey: %v", err)
+			os.Exit(1)
+		}
 
 	case "uname":
 		s.Parse(nsCommand)
