@@ -17,7 +17,7 @@ import (
 
 	"github.com/blackjack/syslog"
 	"github.com/boltdb/bolt"
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 	"golang.org/x/crypto/ssh"
 )
 
