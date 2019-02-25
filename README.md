@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/nugget/netskel.svg?branch=master)](https://travis-ci.org/nugget/netskel)
+[![CircleCI](https://circleci.com/gh/nugget/netskel.svg?style=svg)](https://circleci.com/gh/nugget/netskel)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nugget/netskel)](https://goreportcard.com/report/github.com/nugget/netskel)
 [![codecov](https://codecov.io/gh/nugget/netskel/branch/master/graph/badge.svg)](https://codecov.io/gh/nugget/netskel)
 [![Release](https://img.shields.io/github/release/nugget/netskel.svg)](https://github.com/nugget/netskel/releases)
