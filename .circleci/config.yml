@@ -30,4 +30,3 @@ workflows:
   build_and_test:
     jobs:
       - build-go1.11-gomodules
-      - code-coverage
