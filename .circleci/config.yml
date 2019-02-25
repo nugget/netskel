@@ -1,0 +1,34 @@
+version: 2
+jobs:
+  build-go1.10:
+    docker:
+      - image: circleci/golang:1.10
+    working_directory: /go/src/github.com/nugget/netskel
+    steps:
+      - checkout
+      - run: go get -v -t -d ./...
+      - run: go test -v ./...
+  build-go1.11:
+    docker:
+      - image: circleci/golang:1.11
+    working_directory: /go/src/github.com/nugget/netskel
+    steps:
+      - checkout
+      - run: go get -v -t -d ./...
+      - run: go test -v ./...
+  build-go1.11-modules:
+    docker:
+    - image: circleci/golang:1.11
+    working_directory: ~/src/netskel
+    steps:
+    - checkout
+    - run: go test -v -race -coverprofile=coverage.txt -mod=vendor ./...
+    - run: bash <(curl -s https://codecov.io/bash)
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build-go1.10
+      - build-go1.11
+      - build-go1.11-modules
