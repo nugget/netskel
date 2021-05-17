@@ -1,9 +1,9 @@
-[![CircleCI](https://circleci.com/gh/nugget/netskel.svg?style=svg)](https://circleci.com/gh/nugget/netskel)
+[![CI](https://github.com/nugget/netskel/workflows/Go/badge.svg)](https://github.com/nugget/netskel/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nugget/netskel)](https://goreportcard.com/report/github.com/nugget/netskel)
 [![codecov](https://codecov.io/gh/nugget/netskel/branch/master/graph/badge.svg)](https://codecov.io/gh/nugget/netskel)
 [![Release](https://img.shields.io/github/release/nugget/netskel.svg)](https://github.com/nugget/netskel/releases)
 
-```
+```text
                                     _       _        _ 
  David McNett            _ __   ___| |_ ___| | _____| |
                         | '_ \ / _ \ __/ __| |/ / _ \ |
