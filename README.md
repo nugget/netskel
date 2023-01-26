@@ -12,6 +12,10 @@
 
                         netskel environment synchronizer
 ```
+# This is a deprecated project
+
+This is no longer under active development and I no longer use this service.
+
 # INTRODUCTION
 
 netskel is an ssh based file synchronization tool which can be used to 
